@@ -1,11 +1,11 @@
 # GD Control
 
-A Geometry Dash mod for Geode 6.0.0-beta.1, targeting **Geometry Dash 2.209 (Android ARM64)**.
+A Geometry Dash mod for Geode 6.0.0-beta.1, targeting **Geometry Dash 2.2091 (Android ARM64)**.
 
 ## Features
 
 - **No-Clip** — hooks `PlayLayer::destroyPlayer`. Normal deaths for player 1 and player 2 are suppressed while enabled. Anticheat spikes and level-completion handling are forwarded to the original game method.
-- **Speedhack** — multiplies the delta time passed to `cocos2d::CCScheduler::update`, matching the established approach used by GDH and Eclipse.
+- **Speedhack** — multiplies the delta time passed to `cocos2d::CCScheduler::update`.
 - **GD-style entry button** — uses the game's `ButtonSprite` and `GJ_button_01.png` assets.
 
 ## Configuration
@@ -16,14 +16,9 @@ No-Clip is disabled by default. Speedhack is controlled by the multiplier (0.25x
 
 ## Compatibility
 
-The package targets Geometry Dash **2.209**, not 2.2091. The previous package targeted 2.2091 while the installed game is 2.209. That mismatch is consistent with the unresolved `PlayLayer::circleWaveWillBeRemoved(CCCircleWave*)` symbol shown by the loader.
+This project uses Geode **6.0.0-beta.1**, whose SDK and generated Android64 bindings target Geometry Dash **2.2091**. The `gd.android` field must match that SDK target or CMake rejects the project before compiling.
 
-The referenced public implementations use older game targets:
-- GDH: 2.2074
-- xdBot: 2.2074
-- Eclipse: 2.2081
-
-Their algorithms are useful references, but their binary addresses and complete hook sets must not be copied blindly into 2.209.
+This build is therefore for GD 2.2091. It is not a compatible package for a game installation that is actually GD 2.209. A true 2.209 target requires a Geode SDK release and matching bindings for that exact game version; changing only `mod.json` cannot provide that compatibility.
 
 ## Build
 

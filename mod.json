@@ -1,13 +1,13 @@
 {
   "geode": "6.0.0-beta.1",
   "gd": {
-    "android": "2.209"
+    "android": "2.2091"
   },
   "id": "fakeskyline.gdcontrol",
   "name": "GD Control",
-  "version": "v0.1.4",
+  "version": "v0.1.5",
   "developer": "fakeskyline",
-  "description": "A Geometry Dash mod menu with No-Clip and Speedhack for Geometry Dash 2.209.",
+  "description": "A Geometry Dash mod menu with No-Clip and Speedhack for Geometry Dash 2.2091.",
   "repository": "https://github.com/fakeskyline/GD-Control",
   "tags": [
     "gameplay",
