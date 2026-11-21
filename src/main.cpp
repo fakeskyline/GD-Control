@@ -1,7 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
+#include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/GJBaseGameLayer.hpp>
-#include <Geode/modify/CCScheduler.hpp>
 
 #include <algorithm>
 
@@ -69,22 +69,36 @@ class $modify(GDControlMenuLayer, MenuLayer) {
     }
 };
 
-class $modify(GDControlGameLayer, GJBaseGameLayer) {
+// PlayLayer overrides destroyPlayer. Do not hook GJBaseGameLayer::destroyPlayer:
+// it is inline in the 2.2091 bindings and Geode rejects that hook.
+class $modify(GDControlPlayLayer, PlayLayer) {
     void destroyPlayer(PlayerObject* player, GameObject* object) {
-        if (isNoclipEnabled()) {
-            return;
+        const bool mustKeepOriginalDeath =
+            !isNoclipEnabled() ||
+            !player ||
+            object == m_anticheatSpike ||
+            m_levelEndAnimationStarted;
+
+        if (mustKeepOriginalDeath) {
+            return PlayLayer::destroyPlayer(player, object);
         }
 
-        GJBaseGameLayer::destroyPlayer(player, object);
+        // No-Clip: suppress the normal death path.
     }
 };
 
-class $modify(GDControlScheduler, CCScheduler) {
+// Scale only the gameplay layer delta, leaving the global Cocos scheduler
+// and unrelated menu/UI animations at their normal speed.
+class $modify(GDControlBaseGameLayer, GJBaseGameLayer) {
     void update(float dt) {
-        CCScheduler::update(dt * getSpeedMultiplier());
+        if (typeinfo_cast<PlayLayer*>(this)) {
+            dt *= getSpeedMultiplier();
+        }
+
+        GJBaseGameLayer::update(dt);
     }
 };
 
 $on_mod(Loaded) {
-    log::info("GD Control v0.1.2 loaded.");
+    log::info("GD Control v0.1.3 loaded.");
 }

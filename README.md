@@ -4,15 +4,21 @@ A Geometry Dash mod for Geode, targeting Geometry Dash 2.2091 and Geode 6.0.0-be
 
 ## Features
 
-- **No-Clip** — hooks `GJBaseGameLayer::destroyPlayer`, the class that owns this function in the 2.2091 reverse-engineered source.
-- **Speedhack** — scales `CCScheduler::update` by the configured multiplier.
+- **No-Clip** — hooks the `PlayLayer::destroyPlayer` override. Normal player deaths are suppressed while enabled; the anticheat spike and level-end path are still forwarded to the game.
+- **Speedhack** — scales `GJBaseGameLayer::update` only while a `PlayLayer` is active. The global Cocos scheduler and unrelated menu/UI animations are not scaled.
 - **GD-style entry button** — uses the game's own `ButtonSprite` and `GJ_button_01.png` assets.
 
 ## Configuration
 
 Open Geode -> Mods -> GD Control -> Settings.
 
-No-Clip is disabled by default. Speedhack defaults to 1.0x. Because the scheduler hook scales the Cocos scheduler, it also affects scheduled UI and animation updates; this is a simple first implementation.
+No-Clip is disabled by default. Speedhack defaults to 1.0x and can be set from 0.25x to 3.0x.
+
+## Implementation notes
+
+The 2.2091 bindings mark `GJBaseGameLayer::destroyPlayer` as inline, so Geode cannot hook that base method directly. No-Clip therefore hooks the `PlayLayer` override, following the approach used by QOLMod for the same Geode/GD version pair.
+
+Speedhack scales the gameplay layer's update delta rather than the global scheduler, so the mod does not intentionally accelerate menu and unrelated UI scheduling.
 
 ## Target versions
 

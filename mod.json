@@ -5,7 +5,7 @@
   },
   "id": "fakeskyline.gdcontrol",
   "name": "GD Control",
-  "version": "v0.1.2",
+  "version": "v0.1.3",
   "developer": "fakeskyline",
   "description": "A Geometry Dash-styled mod menu with No-Clip and Speedhack.",
   "repository": "https://github.com/fakeskyline/GD-Control",
@@ -18,13 +18,13 @@
   "settings": {
     "noclip-enabled": {
       "name": "No-Clip",
-      "description": "Prevents the base game layer from processing player death.",
+      "description": "Suppresses normal player deaths. Anticheat spikes and level completion still use the game's normal path.",
       "type": "bool",
       "default": false
     },
     "speed-multiplier": {
       "name": "Speedhack",
-      "description": "Scales the Cocos scheduler update rate. This affects scheduled game and UI updates.",
+      "description": "Scales gameplay-layer updates without changing the global Cocos scheduler.",
       "type": "float",
       "default": 1.0,
       "min": 0.25,
