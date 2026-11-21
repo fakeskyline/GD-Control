@@ -5,14 +5,31 @@
   },
   "id": "fakeskyline.gdcontrol",
   "name": "GD Control",
-  "version": "v0.1.1",
+  "version": "v0.1.2",
   "developer": "fakeskyline",
-  "description": "A Geometry Dash-styled mod menu for Android.",
+  "description": "A Geometry Dash-styled mod menu with No-Clip and Speedhack.",
   "repository": "https://github.com/fakeskyline/GD-Control",
   "tags": [
     "gameplay",
     "interface",
     "offline",
     "cheat"
-  ]
+  ],
+  "settings": {
+    "noclip-enabled": {
+      "name": "No-Clip",
+      "description": "Prevents the base game layer from processing player death.",
+      "type": "bool",
+      "default": false
+    },
+    "speed-multiplier": {
+      "name": "Speedhack",
+      "description": "Scales the Cocos scheduler update rate. This affects scheduled game and UI updates.",
+      "type": "float",
+      "default": 1.0,
+      "min": 0.25,
+      "max": 3.0,
+      "step": 0.05
+    }
+  }
 }
