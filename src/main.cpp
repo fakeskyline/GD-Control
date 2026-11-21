@@ -1,21 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
-#include <Geode/modify/PlayLayer.hpp>
-
-#include <algorithm>
 
 using namespace geode::prelude;
-
-namespace {
-    bool isNoclipEnabled() {
-        return Mod::get()->getSettingValue<bool>("noclip-enabled");
-    }
-
-    float getSpeedMultiplier() {
-        auto value = Mod::get()->getSettingValue<float>("speed-multiplier");
-        return std::clamp(value, 0.25f, 3.0f);
-    }
-}
 
 class $modify(GDControlMenuLayer, MenuLayer) {
     bool init() {
@@ -24,7 +10,6 @@ class $modify(GDControlMenuLayer, MenuLayer) {
         }
 
         auto winSize = CCDirector::sharedDirector()->getWinSize();
-
         auto buttonSprite = ButtonSprite::create(
             "CONTROL",
             "goldFont.fnt",
@@ -53,30 +38,11 @@ class $modify(GDControlMenuLayer, MenuLayer) {
     }
 
     void onGDControl(CCObject*) {
-        auto noclip = isNoclipEnabled() ? "ON" : "OFF";
-        auto speed = getSpeedMultiplier();
-
-        auto message = fmt::format(
-            "NO-CLIP: {}\nSPEED: {:.2f}x\n\nOpen Geode -> Mods -> GD Control -> Settings to change these options.",
-            noclip,
-            speed
-        );
-
-        FLAlertLayer::create("GD CONTROL", message, "OK")->show();
-    }
-};
-
-class $modify(GDControlPlayLayer, PlayLayer) {
-    void destroyPlayer(PlayerObject* player, GameObject* cause) {
-        if (isNoclipEnabled()) {
-            return;
-        }
-
-        PlayLayer::destroyPlayer(player, cause);
-    }
-
-    void update(float dt) {
-        PlayLayer::update(dt * getSpeedMultiplier());
+        FLAlertLayer::create(
+            "GD CONTROL",
+            "GD Control is loaded. Gameplay hooks are temporarily disabled while the Android 2.2091 compatibility issue is fixed.",
+            "OK"
+        )->show();
     }
 };
 

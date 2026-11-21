@@ -1,17 +1,19 @@
 # GD Control
 
-A Geometry Dash mod menu for Geode, targeting Geometry Dash 2.2091 and Geode 6.0.0-beta.1 on Android ARM64.
+A Geometry Dash mod for Geode, targeting Geometry Dash 2.2091 and Geode 6.0.0-beta.1 on Android ARM64.
 
 ## Current status
 
-This repository is the initial development build. It includes the Geode project structure, native Geometry Dash menu entry, configurable gameplay settings, and GitHub Actions packaging. Features are being added incrementally and must be validated in-game before being considered complete.
+This is a compatibility/stability build. It adds a native Geometry Dash-style **CONTROL** button to the main menu and confirms that the mod loads.
 
-### Initial features
+Gameplay hooks are temporarily disabled. The previous Android build failed at runtime because the PlayLayer modification referenced a missing Geometry Dash symbol (`PlayLayer::circleWaveWillBeRemoved(CCCircleWave*)`). The CI compiler and linker did not detect this runtime ABI issue.
 
-- No-Clip toggle: skips the standard player-death handler while enabled. This is a no-death implementation, not yet a complete collision bypass; some collision responses may still occur.
-- Speed multiplier: scales the `PlayLayer::update` delta time using a configurable multiplier.
-- GD-style entry button: uses the game's own `ButtonSprite` and `GJ_button_01.png` assets.
-- Icon Unlocker: planned; not implemented in this initial build. The mod will not falsely report locked icons as unlocked.
+### Features
+
+- GD-style entry button using the game's `ButtonSprite` and `GJ_button_01.png` assets.
+- No-Clip: temporarily disabled while a compatible hook is developed.
+- Speed multiplier: temporarily disabled while a compatible hook is developed.
+- Icon Unlocker: planned, not implemented.
 
 ## Target versions
 
@@ -24,20 +26,13 @@ This repository is the initial development build. It includes the Geode project 
 
 ## Build
 
-The GitHub Actions workflow builds the `.geode` package for Android64 using `geode-sdk/build-geode-mod@main`.
+GitHub Actions builds the `.geode` package for Android64 using `geode-sdk/build-geode-mod@main`.
 
-Push to `main` or run the workflow manually from the Actions tab. The resulting `.geode` file is uploaded as a workflow artifact.
-
-## Configure
-
-Open the Geode mod settings for **GD Control** to enable No-Clip and adjust the speed multiplier. The in-game GD-style button opens the feature/status panel.
+The resulting package is uploaded as the `GD-Control-Android64` workflow artifact.
 
 ## Notes
 
-- No-Clip currently prevents the standard death handler; it does not yet remove every collision response or hazard interaction.
-- Speed scaling is applied to the gameplay update delta, not the global Cocos scheduler, to avoid slowing unrelated UI and mod tasks.
-- Icon unlocking is not included until the correct 2.2091 profile/statistics APIs are implemented and tested.
-- This is an early development build. A successful CI compile does not replace testing on an actual Android device.
+A successful CI build does not guarantee runtime compatibility. Test the package on the target Android/Geometry Dash version before enabling gameplay hooks.
 
 ## License
 

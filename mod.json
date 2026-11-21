@@ -5,31 +5,14 @@
   },
   "id": "fakeskyline.gdcontrol",
   "name": "GD Control",
-  "version": "v0.1.0",
+  "version": "v0.1.1",
   "developer": "fakeskyline",
-  "description": "A Geometry Dash-styled mod menu with gameplay options.",
+  "description": "A Geometry Dash-styled mod menu for Android.",
   "repository": "https://github.com/fakeskyline/GD-Control",
   "tags": [
     "gameplay",
     "interface",
     "offline",
     "cheat"
-  ],
-  "settings": {
-    "noclip-enabled": {
-      "name": "No-Clip",
-      "description": "Prevents the standard player-death handler while enabled.",
-      "type": "bool",
-      "default": false
-    },
-    "speed-multiplier": {
-      "name": "Speed Multiplier",
-      "description": "Gameplay update speed multiplier. 1.0 is normal speed.",
-      "type": "float",
-      "default": 1.0,
-      "min": 0.25,
-      "max": 3.0,
-      "step": 0.05
-    }
-  }
+  ]
 }
