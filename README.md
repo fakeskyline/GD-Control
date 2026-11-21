@@ -1,37 +1,33 @@
 # GD Control
 
-A Geometry Dash mod for Geode, targeting Geometry Dash 2.2091 and Geode 6.0.0-beta.1 on Android ARM64.
+A Geometry Dash mod for Geode 6.0.0-beta.1, targeting **Geometry Dash 2.209 (Android ARM64)**.
 
 ## Features
 
-- **No-Clip** — hooks the `PlayLayer::destroyPlayer` override. Normal player deaths are suppressed while enabled; the anticheat spike and level-end path are still forwarded to the game.
-- **Speedhack** — scales `GJBaseGameLayer::update` only while a `PlayLayer` is active. The global Cocos scheduler and unrelated menu/UI animations are not scaled.
-- **GD-style entry button** — uses the game's own `ButtonSprite` and `GJ_button_01.png` assets.
+- **No-Clip** — hooks `PlayLayer::destroyPlayer`. Normal deaths for player 1 and player 2 are suppressed while enabled. Anticheat spikes and level-completion handling are forwarded to the original game method.
+- **Speedhack** — multiplies the delta time passed to `cocos2d::CCScheduler::update`, matching the established approach used by GDH and Eclipse.
+- **GD-style entry button** — uses the game's `ButtonSprite` and `GJ_button_01.png` assets.
 
 ## Configuration
 
 Open Geode -> Mods -> GD Control -> Settings.
 
-No-Clip is disabled by default. Speedhack defaults to 1.0x and can be set from 0.25x to 3.0x.
+No-Clip is disabled by default. Speedhack is controlled by the multiplier (0.25x–3.0x); 1.0x is normal speed.
 
-## Implementation notes
+## Compatibility
 
-The 2.2091 bindings mark `GJBaseGameLayer::destroyPlayer` as inline, so Geode cannot hook that base method directly. No-Clip therefore hooks the `PlayLayer` override, following the approach used by QOLMod for the same Geode/GD version pair.
+The package targets Geometry Dash **2.209**, not 2.2091. The previous package targeted 2.2091 while the installed game is 2.209. That mismatch is consistent with the unresolved `PlayLayer::circleWaveWillBeRemoved(CCCircleWave*)` symbol shown by the loader.
 
-Speedhack scales the gameplay layer's update delta rather than the global scheduler, so the mod does not intentionally accelerate menu and unrelated UI scheduling.
+The referenced public implementations use older game targets:
+- GDH: 2.2074
+- xdBot: 2.2074
+- Eclipse: 2.2081
 
-## Target versions
-
-| Component | Target |
-|---|---|
-| Geometry Dash | 2.2091 |
-| Geode | 6.0.0-beta.1 |
-| Build target | Android64 (`arm64-v8a`) |
-| Language | C++23 |
+Their algorithms are useful references, but their binary addresses and complete hook sets must not be copied blindly into 2.209.
 
 ## Build
 
-GitHub Actions builds the `.geode` package for Android64 using `geode-sdk/build-geode-mod@main`. The artifact is named `GD-Control-Android64`.
+GitHub Actions builds the Android64 (`arm64-v8a`) `.geode` package. Artifact: `GD-Control-Android64`.
 
 ## License
 

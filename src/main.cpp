@@ -1,7 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
-#include <Geode/modify/GJBaseGameLayer.hpp>
+#include <Geode/modify/CCScheduler.hpp>
 
 #include <algorithm>
 
@@ -69,36 +69,44 @@ class $modify(GDControlMenuLayer, MenuLayer) {
     }
 };
 
-// PlayLayer overrides destroyPlayer. Do not hook GJBaseGameLayer::destroyPlayer:
-// it is inline in the 2.2091 bindings and Geode rejects that hook.
+// No-Clip: intercept the PlayLayer death path, not the inline
+// GJBaseGameLayer::destroyPlayer implementation.
 class $modify(GDControlPlayLayer, PlayLayer) {
-    void destroyPlayer(PlayerObject* player, GameObject* object) {
-        const bool mustKeepOriginalDeath =
-            !isNoclipEnabled() ||
-            !player ||
-            object == m_anticheatSpike ||
-            m_levelEndAnimationStarted;
-
-        if (mustKeepOriginalDeath) {
+    void destroyPlayer(PlayerObject* player, GameObject* object) override {
+        if (!isNoclipEnabled() || !player) {
             return PlayLayer::destroyPlayer(player, object);
         }
 
-        // No-Clip: suppress the normal death path.
+        // Keep RobTop's anticheat spike and level-completion paths intact.
+        if ((m_anticheatSpike && object == m_anticheatSpike) ||
+            m_levelEndAnimationStarted ||
+            m_hasCompletedLevel) {
+            return PlayLayer::destroyPlayer(player, object);
+        }
+
+        // Eclipse/GDH-style noclip: suppress the normal death call for
+        // either active player. The original method is called when disabled.
+        if (player == m_player1 || player == m_player2) {
+            return;
+        }
+
+        PlayLayer::destroyPlayer(player, object);
     }
 };
 
-// Scale only the gameplay layer delta, leaving the global Cocos scheduler
-// and unrelated menu/UI animations at their normal speed.
-class $modify(GDControlBaseGameLayer, GJBaseGameLayer) {
-    void update(float dt) {
-        if (typeinfo_cast<PlayLayer*>(this)) {
-            dt *= getSpeedMultiplier();
+// Speedhack: scale the frame delta at the Cocos scheduler boundary.
+// This is the established implementation used by GDH and Eclipse.
+class $modify(GDControlScheduler, cocos2d::CCScheduler) {
+    void update(float dt) override {
+        auto speed = getSpeedMultiplier();
+        if (speed > 0.f && speed != 1.f) {
+            dt *= speed;
         }
 
-        GJBaseGameLayer::update(dt);
+        CCScheduler::update(dt);
     }
 };
 
 $on_mod(Loaded) {
-    log::info("GD Control v0.1.3 loaded.");
+    log::info("GD Control v0.1.4 loaded for Geometry Dash 2.209.");
 }
