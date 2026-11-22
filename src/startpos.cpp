@@ -145,6 +145,10 @@ namespace {
     }
 }
 
+bool gdControlSwitchStartPos(int direction) {
+    return switchStartPos(direction);
+}
+
 class $modify(GDControlStartPosEditor, LevelEditorLayer) {
     bool init(GJGameLevel* level, bool noUI) {
         restoreOverrides();

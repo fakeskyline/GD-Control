@@ -21,6 +21,8 @@
 
 using namespace geode::prelude;
 
+bool gdControlSwitchStartPos(int direction);
+
 namespace {
     bool isNoclipEnabled() {
         return Mod::get()->getSettingValue<bool>("noclip-enabled");
@@ -154,10 +156,10 @@ protected:
     CCLabelTTF* m_colorsTitle = nullptr;
 
     float m_cardTitleMaxWidth = 0.f;
-    CCNode* m_pages[3] = { nullptr, nullptr, nullptr };
-    CCLabelTTF* m_tabLabels[3] = { nullptr, nullptr, nullptr };
-    geode::NineSlice* m_tabBgs[3] = { nullptr, nullptr, nullptr };
-    CCMenuItemSpriteExtra* m_tabButtons[3] = { nullptr, nullptr, nullptr };
+    CCNode* m_pages[4] = { nullptr, nullptr, nullptr, nullptr };
+    CCLabelTTF* m_tabLabels[4] = { nullptr, nullptr, nullptr, nullptr };
+    geode::NineSlice* m_tabBgs[4] = { nullptr, nullptr, nullptr, nullptr };
+    CCMenuItemSpriteExtra* m_tabButtons[4] = { nullptr, nullptr, nullptr, nullptr };
     CCMenu* m_tabMenu = nullptr;
     geode::NineSlice* m_contentBG = nullptr;
     CCLabelTTF* m_noclipCheck = nullptr;
@@ -352,9 +354,9 @@ protected:
     }
 
     void setPage(int index) {
-        if (index < 0 || index >= 3) return;
+        if (index < 0 || index >= 4) return;
         m_activePage = index;
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 4; ++i) {
             const bool active = i == index;
             if (m_pages[i]) m_pages[i]->setVisible(active);
             if (m_tabButtons[i]) m_tabButtons[i]->setEnabled(!active);
@@ -412,10 +414,10 @@ protected:
         m_tabMenu = CCMenu::create();
         m_tabMenu->setContentSize({120.f, 260.f});
         m_tabMenu->setAnchorPoint({0.5f, 0.5f});
-        const char* navEn[3] = {"PLAYER", "UNLOCKS", "BYPASS"};
-        const char* navRu[3] = {"ИГРОК", "РАЗБЛОКИРОВКИ", "ОБХОДЫ"};
+        const char* navEn[4] = {"PLAYER", "UNLOCKS", "BYPASS", "LEVEL"};
+        const char* navRu[4] = {"ИГРОК", "РАЗБЛОКИРОВКИ", "ОБХОДЫ", "УРОВЕНЬ"};
 
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 4; ++i) {
             auto tabNode = CCNode::create();
             tabNode->setScale(0.9f);
             tabNode->setContentSize({120.f, 28.f});
@@ -460,7 +462,7 @@ protected:
         m_tabMenu->updateLayout();
         bgTab->addChildAtPosition(m_tabMenu, geode::Anchor::Center, {0.f, -20.f});
 
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 4; ++i) {
             m_pages[i] = CCNode::create();
             m_pages[i]->setContentSize({contentW, contentH});
             m_pages[i]->setAnchorPoint({0.f, 1.f});
@@ -576,6 +578,55 @@ protected:
         addValueControls(fpsRow, m_fpsValue, fmt::format("{} FPS", getFPSBypassValue()).c_str(),
             [this]() { onFPSDown(nullptr); }, [this]() { onFPSUp(nullptr); }, 260.f);
 
+        // LEVEL
+        CCLabelTTF* smartTitle = nullptr;
+        CCLabelTTF* smartCheck = nullptr;
+        addComponentRow(m_pages[3], 0, tr("Smart Start Pos", "Умные старт-позиции"),
+            smartTitle, smartCheck,
+            Mod::get()->getSettingValue<bool>("smart-startpos-enabled"),
+            [this]() {
+                auto mod = Mod::get();
+                mod->setSettingValue<bool>("smart-startpos-enabled",
+                    !mod->getSettingValue<bool>("smart-startpos-enabled"));
+                refreshValues();
+            });
+
+        CCLabelTTF* killTitle = nullptr;
+        CCLabelTTF* killCheck = nullptr;
+        addComponentRow(m_pages[3], 1, tr("Auto Kill At %", "Авто-смерть на %"),
+            killTitle, killCheck,
+            Mod::get()->getSettingValue<bool>("auto-kill-enabled"),
+            [this]() {
+                auto mod = Mod::get();
+                mod->setSettingValue<bool>("auto-kill-enabled",
+                    !mod->getSettingValue<bool>("auto-kill-enabled"));
+                refreshValues();
+            });
+
+        auto killPercentRow = addPlainRow(m_pages[3], 2,
+            tr("Kill percentage", "Процент смерти"), m_speedTitle);
+        addValueControls(killPercentRow, m_speedLabel,
+            fmt::format("{}%", static_cast<int>(Mod::get()->getSettingValue<float>("auto-kill-percent"))).c_str(),
+            [this]() {
+                auto mod = Mod::get();
+                mod->setSettingValue<float>("auto-kill-percent",
+                    std::max(1.f, mod->getSettingValue<float>("auto-kill-percent") - 1.f));
+                refreshValues();
+            },
+            [this]() {
+                auto mod = Mod::get();
+                mod->setSettingValue<float>("auto-kill-percent",
+                    std::min(100.f, mod->getSettingValue<float>("auto-kill-percent") + 1.f));
+                refreshValues();
+            }, 260.f);
+
+        auto switchRow = addPlainRow(m_pages[3], 3,
+            tr("Switch Startpos", "Переключить старт"), m_speedTitle);
+        addActionButton(switchRow, tr("Previous", "Назад"), {contentW - 112.f, 14.f},
+            76.f, 22.f, []() { gdControlSwitchStartPos(-1); });
+        addActionButton(switchRow, tr("Next", "Вперёд"), {contentW - 38.f, 14.f},
+            76.f, 22.f, []() { gdControlSwitchStartPos(1); });
+
         setPage(0);
         refreshValues();
         return true;
@@ -585,6 +636,7 @@ protected:
         if (m_tabLabels[0]) m_tabLabels[0]->setString(tr("PLAYER", "ИГРОК"));
         if (m_tabLabels[1]) m_tabLabels[1]->setString(tr("UNLOCKS", "РАЗБЛОКИРОВКИ"));
         if (m_tabLabels[2]) m_tabLabels[2]->setString(tr("BYPASS", "ОБХОДЫ"));
+        if (m_tabLabels[3]) m_tabLabels[3]->setString(tr("LEVEL", "УРОВЕНЬ"));
 
         if (m_noclipTitle) m_noclipTitle->setString(tr("No-Clip", "Ноуклип"));
         if (m_speedTitle) m_speedTitle->setString(tr("Speedhack", "Ускорение"));
