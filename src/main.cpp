@@ -154,7 +154,7 @@ protected:
 
         auto surface = CCLayerColor::create(ccc4(25, 29, 38, 255), w, h);
         surface->setPosition({0.f, 0.f});
-        m_mainLayer->addChild(surface, -10);
+        m_mainLayer->addChild(surface, 0);
 
         m_titleLabel = addText("GD CONTROL", {w * 0.5f, h * 0.91f}, 25.f,
                                ccc3(238, 241, 248));
