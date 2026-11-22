@@ -42,141 +42,210 @@ namespace {
 
 class GDControlPopup : public Popup {
 protected:
-    CCLabelBMFont* m_noclipLabel = nullptr;
-    CCLabelBMFont* m_speedLabel = nullptr;
-    CCLabelBMFont* m_iconsLabel = nullptr;
-    CCLabelBMFont* m_practiceMusicLabel = nullptr;
+    CCLabelTTF* m_noclipLabel = nullptr;
+    CCLabelTTF* m_speedLabel = nullptr;
+    CCLabelTTF* m_iconsLabel = nullptr;
+    CCLabelTTF* m_practiceMusicLabel = nullptr;
+    CCLabelTTF* m_titleLabel = nullptr;
+    CCLabelTTF* m_languageLabel = nullptr;
+    CCLabelTTF* m_noclipTitle = nullptr;
+    CCLabelTTF* m_speedTitle = nullptr;
+    CCLabelTTF* m_iconsTitle = nullptr;
+    CCLabelTTF* m_musicTitle = nullptr;
+    CCLabelTTF* m_noclipButtonLabel = nullptr;
+    CCLabelTTF* m_iconsButtonLabel = nullptr;
+    CCLabelTTF* m_musicButtonLabel = nullptr;
+    CCLabelTTF* m_hintLabel = nullptr;
+
+    bool isRussian() {
+        return Mod::get()->getSavedValue<bool>("ui-russian", false);
+    }
+
+    const char* tr(const char* en, const char* ru) {
+        return isRussian() ? ru : en;
+    }
+
+    CCLabelTTF* addText(const char* text, CCPoint pos, float size, ccColor3B color,
+                        CCNode* parent = nullptr) {
+        auto label = CCLabelTTF::create(text, "Arial", size);
+        label->setColor(color);
+        label->setAnchorPoint({0.5f, 0.5f});
+        label->setPosition(pos);
+        (parent ? parent : static_cast<CCNode*>(m_mainLayer))->addChild(label);
+        return label;
+    }
+
+    CCNode* addCard(float x, float y, float w, float h) {
+        auto card = CCLayerColor::create(ccc4(39, 45, 58, 255), w, h);
+        card->setPosition({x - w * 0.5f, y - h * 0.5f});
+        m_mainLayer->addChild(card, 1);
+        return card;
+    }
+
+    CCMenuItemSpriteExtra* addActionButton(const char* text, CCPoint pos, float w,
+                                           SEL_MenuHandler callback) {
+        auto bg = CCLayerColor::create(ccc4(65, 105, 220, 255), w, 42.f);
+        auto label = CCLabelTTF::create(text, "Arial", 17.f);
+        label->setColor(ccc3(255, 255, 255));
+        label->setPosition({w * 0.5f, 21.f});
+        bg->addChild(label);
+        auto item = CCMenuItemSpriteExtra::create(bg, this, callback);
+        item->setPosition(pos);
+        m_buttonMenu->addChild(item);
+        return item;
+    }
+
+    CCMenuItemSpriteExtra* addSmallButton(const char* text, CCPoint pos,
+                                          SEL_MenuHandler callback) {
+        auto bg = CCLayerColor::create(ccc4(65, 105, 220, 255), 42.f, 38.f);
+        auto label = CCLabelTTF::create(text, "Arial", 20.f);
+        label->setColor(ccc3(255, 255, 255));
+        label->setPosition({21.f, 19.f});
+        bg->addChild(label);
+        auto item = CCMenuItemSpriteExtra::create(bg, this, callback);
+        item->setPosition(pos);
+        m_buttonMenu->addChild(item);
+        return item;
+    }
+
+    void buildCard(float centerX, float centerY, float cardW, float cardH,
+                   const char* title, CCLabelTTF*& titleLabel,
+                   CCLabelTTF*& statusLabel, CCLabelTTF*& buttonLabel,
+                   const char* status, SEL_MenuHandler callback,
+                   bool speedCard = false) {
+        auto card = addCard(centerX, centerY, cardW, cardH);
+        titleLabel = addText(title, {cardW * 0.5f, cardH * 0.76f}, 19.f,
+                             ccc3(224, 229, 240), card);
+        if (speedCard) {
+            m_speedLabel = addText(status, {cardW * 0.5f, cardH * 0.39f}, 23.f,
+                                   ccc3(190, 205, 255), card);
+            addSmallButton("-", {centerX - cardW * 0.27f, centerY - cardH * 0.11f},
+                           menu_selector(GDControlPopup::onSpeedDown));
+            addSmallButton("+", {centerX + cardW * 0.27f, centerY - cardH * 0.11f},
+                           menu_selector(GDControlPopup::onSpeedUp));
+        } else {
+            statusLabel = addText(status, {cardW * 0.5f, cardH * 0.48f}, 15.f,
+                                  ccc3(174, 190, 214), card);
+            buttonLabel = addText("", {cardW * 0.5f, 21.f}, 1.f,
+                                  ccc3(255, 255, 255), card);
+            buttonLabel->setVisible(false);
+            auto btn = CCLayerColor::create(ccc4(65, 105, 220, 255), std::min(150.f, cardW * 0.62f), 40.f);
+            auto btnText = CCLabelTTF::create(tr("Change", "Изменить"), "Arial", 16.f);
+            btnText->setColor(ccc3(255, 255, 255));
+            btnText->setPosition({btn->getContentSize().width * 0.5f, 20.f});
+            btn->addChild(btnText);
+            auto item = CCMenuItemSpriteExtra::create(btn, this, callback);
+            item->setPosition({centerX, centerY - cardH * 0.22f});
+            m_buttonMenu->addChild(item);
+            buttonLabel = btnText;
+        }
+    }
 
     bool init() {
         auto win = CCDirector::sharedDirector()->getWinSize();
-        auto panelWidth = std::max(1.f, win.width * 0.94f);
-        auto panelHeight = std::max(1.f, win.height * 0.94f);
-        if (!Popup::init(panelWidth, panelHeight, "GJ_square01.png")) {
-            return false;
-        }
+        const float panelW = win.width * 0.94f;
+        const float panelH = win.height * 0.92f;
+        if (!Popup::init(panelW, panelH, "GJ_square01.png")) return false;
 
-        this->setTitle("GD CONTROL", "goldFont.fnt", 0.85f);
         auto size = m_mainLayer->getContentSize();
-        const float width = size.width;
-        const float height = size.height;
-        const bool twoColumns = width >= height * 1.25f;
+        const float w = size.width;
+        const float h = size.height;
 
-        auto makeButton = [this](const char* text, CCPoint pos, SEL_MenuHandler callback, float scale = 0.58f) {
-            auto sprite = ButtonSprite::create(text, "goldFont.fnt", "GJ_button_01.png", scale);
-            auto item = CCMenuItemSpriteExtra::create(sprite, this, callback);
-            item->setPosition(pos);
-            m_buttonMenu->addChild(item);
-            return item;
-        };
+        auto surface = CCLayerColor::create(ccc4(25, 29, 38, 255), w, h);
+        surface->setPosition({0.f, 0.f});
+        m_mainLayer->addChild(surface, -10);
 
-        auto makeLabel = [this](const char* text, CCPoint pos, float baseScale, float maxWidth, bool gold = false) {
-            auto label = CCLabelBMFont::create(text, gold ? "goldFont.fnt" : "bigFont.fnt");
-            label->setAnchorPoint({0.5f, 0.5f});
-            float fit = label->getContentSize().width > 0.f
-                ? std::min(baseScale, maxWidth / label->getContentSize().width)
-                : baseScale;
-            label->setScale(std::max(0.28f, fit));
-            label->setPosition(pos);
-            m_mainLayer->addChild(label);
-            return label;
-        };
+        m_titleLabel = addText("GD CONTROL", {w * 0.5f, h * 0.91f}, 25.f,
+                               ccc3(238, 241, 248));
+        m_languageLabel = addText("", {w * 0.84f, h * 0.91f}, 13.f,
+                                  ccc3(190, 205, 255));
+        auto langBg = CCLayerColor::create(ccc4(49, 58, 76, 255), 74.f, 32.f);
+        auto langText = CCLabelTTF::create("", "Arial", 13.f);
+        langText->setColor(ccc3(220, 228, 245));
+        langText->setPosition({37.f, 16.f});
+        langBg->addChild(langText);
+        m_languageLabel = langText;
+        auto langItem = CCMenuItemSpriteExtra::create(langBg, this, menu_selector(GDControlPopup::onToggleLanguage));
+        langItem->setPosition({w * 0.84f, h * 0.91f});
+        m_buttonMenu->addChild(langItem);
 
-        const float cellWidth = twoColumns ? width * 0.42f : width * 0.88f;
-        const float leftX = twoColumns ? width * 0.27f : width * 0.5f;
-        const float rightX = width * 0.73f;
-        const float titleOffset = twoColumns ? height * 0.105f : height * 0.052f;
-        const float actionOffset = twoColumns ? height * 0.105f : height * 0.052f;
+        const bool landscape = w >= h * 1.15f;
+        const float gap = landscape ? w * 0.035f : w * 0.04f;
+        const float cardW = landscape ? (w - gap * 3.f) * 0.5f : w * 0.86f;
+        const float cardH = landscape ? h * 0.29f : h * 0.165f;
+        const float top = h * 0.69f;
+        const float bottom = landscape ? h * 0.34f : h * 0.17f;
+        const float left = landscape ? w * 0.25f : w * 0.5f;
+        const float right = landscape ? w * 0.75f : w * 0.5f;
 
-        auto addToggleSection = [&](const char* title, CCLabelBMFont*& valueLabel,
-                                    float x, float y, SEL_MenuHandler callback,
-                                    const char* initialValue) {
-            makeLabel(title, {x, y + titleOffset}, 0.56f, cellWidth * 0.94f);
-            valueLabel = makeLabel(initialValue, {x, y}, 0.66f, cellWidth * 0.90f, true);
-            makeButton("TOGGLE", {x, y - actionOffset}, callback, 0.56f);
-        };
+        buildCard(left, top, cardW, cardH, tr("NO-CLIP", "НОУКЛИП"),
+                  m_noclipTitle, m_noclipLabel, m_noclipButtonLabel,
+                  isNoclipEnabled() ? "ON" : "OFF",
+                  menu_selector(GDControlPopup::onToggleNoclip));
+        buildCard(right, top, cardW, cardH, tr("SPEEDHACK", "УСКОРЕНИЕ"),
+                  m_speedTitle, m_speedLabel, m_speedButtonLabel,
+                  fmt::format("{:.2f}x", getSpeedMultiplier()).c_str(),
+                  nullptr, true);
+        buildCard(left, bottom, cardW, cardH, tr("UNLOCK ICONS", "РАЗБЛОКИРОВКА ИКОНОК"),
+                  m_iconsTitle, m_iconsLabel, m_iconsButtonLabel,
+                  isUnlockIconsEnabled() ? "ON" : "OFF",
+                  menu_selector(GDControlPopup::onToggleIcons));
+        buildCard(right, bottom, cardW, cardH, tr("PRACTICE MUSIC", "МУЗЫКА В ПРАКТИКЕ"),
+                  m_musicTitle, m_practiceMusicLabel, m_musicButtonLabel,
+                  isPracticeMusicEnabled() ? "ON" : "OFF",
+                  menu_selector(GDControlPopup::onTogglePracticeMusic));
 
-        auto addSpeedSection = [&](float x, float y) {
-            makeLabel("SPEEDHACK", {x, y + titleOffset}, 0.56f, cellWidth * 0.94f);
-            const float buttonOffset = cellWidth * (twoColumns ? 0.30f : 0.25f);
-            makeButton("-", {x - buttonOffset, y - actionOffset * 0.15f},
-                menu_selector(GDControlPopup::onSpeedDown), 0.54f);
-            m_speedLabel = makeLabel("", {x, y - actionOffset * 0.15f},
-                0.66f, cellWidth * 0.34f, true);
-            makeButton("+", {x + buttonOffset, y - actionOffset * 0.15f},
-                menu_selector(GDControlPopup::onSpeedUp), 0.54f);
-        };
-
-        if (twoColumns) {
-            const float topY = height * 0.64f;
-            const float bottomY = height * 0.27f;
-
-            addToggleSection("NO-CLIP", m_noclipLabel, leftX, topY,
-                menu_selector(GDControlPopup::onToggleNoclip),
-                isNoclipEnabled() ? "ENABLED" : "DISABLED");
-            addSpeedSection(rightX, topY);
-
-            addToggleSection("UNLOCK ICONS", m_iconsLabel, leftX, bottomY,
-                menu_selector(GDControlPopup::onToggleIcons),
-                isUnlockIconsEnabled() ? "ENABLED" : "DISABLED");
-            addToggleSection("PRACTICE MUSIC", m_practiceMusicLabel, rightX, bottomY,
-                menu_selector(GDControlPopup::onTogglePracticeMusic),
-                isPracticeMusicEnabled() ? "UNLOCKED" : "LOCKED");
-        } else {
-            const float rowStep = height * 0.195f;
-            const float firstY = height * 0.79f;
-
-            addToggleSection("NO-CLIP", m_noclipLabel, leftX, firstY,
-                menu_selector(GDControlPopup::onToggleNoclip),
-                isNoclipEnabled() ? "ENABLED" : "DISABLED");
-            addSpeedSection(leftX, firstY - rowStep);
-            addToggleSection("UNLOCK ICONS", m_iconsLabel, leftX, firstY - rowStep * 2.f,
-                menu_selector(GDControlPopup::onToggleIcons),
-                isUnlockIconsEnabled() ? "ENABLED" : "DISABLED");
-            addToggleSection("PRACTICE MUSIC", m_practiceMusicLabel, leftX, firstY - rowStep * 3.f,
-                menu_selector(GDControlPopup::onTogglePracticeMusic),
-                isPracticeMusicEnabled() ? "UNLOCKED" : "LOCKED");
-        }
-
-        auto hint = CCLabelBMFont::create("LOCAL MOD SETTINGS", "goldFont.fnt");
-        hint->setOpacity(150);
-        hint->setScale(std::min(0.38f, width * 0.25f / hint->getContentSize().width));
-        hint->setAnchorPoint({0.5f, 0.5f});
-        hint->setPosition({width * 0.5f, height * 0.035f});
-        m_mainLayer->addChild(hint);
-
-        this->refreshValues();
+        m_hintLabel = addText(tr("Local settings • changes apply instantly",
+                                 "Локальные настройки • изменения сразу применяются"),
+                              {w * 0.5f, h * 0.045f}, 12.f,
+                              ccc3(137, 149, 171));
+        refreshValues();
         return true;
     }
+
     void refreshValues() {
-        if (m_noclipLabel) m_noclipLabel->setString(isNoclipEnabled() ? "ENABLED" : "DISABLED");
+        if (m_noclipLabel) m_noclipLabel->setString(isNoclipEnabled() ? "ON" : "OFF");
         if (m_speedLabel) m_speedLabel->setString(fmt::format("{:.2f}x", getSpeedMultiplier()).c_str());
-        if (m_iconsLabel) m_iconsLabel->setString(isUnlockIconsEnabled() ? "ENABLED" : "DISABLED");
-        if (m_practiceMusicLabel) m_practiceMusicLabel->setString(isPracticeMusicEnabled() ? "UNLOCKED" : "LOCKED");
+        if (m_iconsLabel) m_iconsLabel->setString(isUnlockIconsEnabled() ? "ON" : "OFF");
+        if (m_practiceMusicLabel) m_practiceMusicLabel->setString(isPracticeMusicEnabled() ? "ON" : "OFF");
+
+        if (m_titleLabel) m_titleLabel->setString("GD CONTROL");
+        if (m_languageLabel) m_languageLabel->setString(isRussian() ? "RU" : "EN");
+        if (m_noclipTitle) m_noclipTitle->setString(tr("NO-CLIP", "НОУКЛИП"));
+        if (m_speedTitle) m_speedTitle->setString(tr("SPEEDHACK", "УСКОРЕНИЕ"));
+        if (m_iconsTitle) m_iconsTitle->setString(tr("UNLOCK ICONS", "РАЗБЛОКИРОВКА ИКОНОК"));
+        if (m_musicTitle) m_musicTitle->setString(tr("PRACTICE MUSIC", "МУЗЫКА В ПРАКТИКЕ"));
+        if (m_noclipButtonLabel) m_noclipButtonLabel->setString(tr("Change", "Изменить"));
+        if (m_iconsButtonLabel) m_iconsButtonLabel->setString(tr("Change", "Изменить"));
+        if (m_musicButtonLabel) m_musicButtonLabel->setString(tr("Change", "Изменить"));
+        if (m_hintLabel) m_hintLabel->setString(tr("Local settings • changes apply instantly",
+                                                   "Локальные настройки • изменения сразу применяются"));
+    }
+
+    void onToggleLanguage(CCObject*) {
+        Mod::get()->setSavedValue<bool>("ui-russian", !isRussian());
+        refreshValues();
     }
 
     void onToggleNoclip(CCObject*) {
         Mod::get()->setSettingValue<bool>("noclip-enabled", !isNoclipEnabled());
-        this->refreshValues();
+        refreshValues();
     }
-
     void onToggleIcons(CCObject*) {
         Mod::get()->setSettingValue<bool>("unlock-icons", !isUnlockIconsEnabled());
-        this->refreshValues();
+        refreshValues();
     }
-
     void onTogglePracticeMusic(CCObject*) {
         Mod::get()->setSettingValue<bool>("unlock-practice-music", !isPracticeMusicEnabled());
-        this->refreshValues();
+        refreshValues();
     }
-
     void onSpeedDown(CCObject*) {
         setSpeedMultiplier(getSpeedMultiplier() - 0.05f);
-        this->refreshValues();
+        refreshValues();
     }
-
     void onSpeedUp(CCObject*) {
         setSpeedMultiplier(getSpeedMultiplier() + 0.05f);
-        this->refreshValues();
+        refreshValues();
     }
 
 public:
@@ -190,7 +259,6 @@ public:
         return nullptr;
     }
 };
-
 class GDFloatingButton : public CCNode, public cocos2d::CCTargetedTouchDelegate {
 protected:
     bool m_dragging = false;
@@ -205,8 +273,8 @@ protected:
         }
 
         auto sprite = ButtonSprite::create(
-            "GD CONTROL",
-            "goldFont.fnt",
+            "GDC",
+            "bigFont.fnt",
             "GJ_button_01.png",
             0.65f
         );
