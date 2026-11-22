@@ -47,7 +47,7 @@
   "resources": {
     "fonts": {
       "GoogleSans": {
-        "path": "fonts/GoogleSans-Regular.ttf",
+        "path": "resources/fonts/GoogleSans-Regular.ttf",
         "size": 80,
         "charset": "32-127,160-255,1024-1327,8211-8212,8226"
       }
@@ -56,7 +56,7 @@
       "images/*.png"
     ],
     "files": [
-      "fonts/OFL.txt"
+      "resources/fonts/OFL.txt"
     ]
   }
 }
