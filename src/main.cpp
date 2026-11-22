@@ -714,8 +714,8 @@ class $modify(GDControlMenuLayer, MenuLayer) {
 };
 
 class $modify(GDControlPlayLayer, PlayLayer) {
-    bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
-        if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
+    bool init(GJGameLevel* level, bool dontCreateObjects) {
+        if (!PlayLayer::init(level, dontCreateObjects)) return false;
         attachFloatingButton(this);
         return true;
     }
