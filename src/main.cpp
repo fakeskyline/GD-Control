@@ -41,6 +41,9 @@ namespace {
     bool isUnlockIconsEnabled() {
         return Mod::get()->getSettingValue<bool>("unlock-icons");
     }
+    bool isUnlockColorsEnabled() {
+        return Mod::get()->getSettingValue<bool>("unlock-colors");
+    }
 
     void setSpeedMultiplier(float value) {
         value = std::round(std::clamp(value, 0.25f, 3.0f) * 20.f) / 20.f;
@@ -145,14 +148,15 @@ protected:
     CCLabelTTF* m_fpsValue = nullptr;
     CCLabelTTF* m_fpsAction = nullptr;
     CCLabelTTF* m_instantCompleteTitle = nullptr;
-    CCLabelTTF* m_achievementCountLabel = nullptr;
+    CCLabelTTF* m_colorsTitle = nullptr;
 
     float m_cardTitleMaxWidth = 0.f;
-    CCNode* m_pages[4] = { nullptr, nullptr, nullptr, nullptr };
-    CCLabelTTF* m_tabLabels[4] = { nullptr, nullptr, nullptr, nullptr };
-    geode::NineSlice* m_tabBgs[4] = { nullptr, nullptr, nullptr, nullptr };
+    CCNode* m_pages[3] = { nullptr, nullptr, nullptr };
+    CCLabelTTF* m_tabLabels[3] = { nullptr, nullptr, nullptr };
+    geode::NineSlice* m_tabBgs[3] = { nullptr, nullptr, nullptr };
     CCLabelTTF* m_noclipCheck = nullptr;
     CCLabelTTF* m_iconsCheck = nullptr;
+    CCLabelTTF* m_colorsCheck = nullptr;
     CCLabelTTF* m_musicCheck = nullptr;
     CCLabelTTF* m_autoCheck = nullptr;
     CCLabelTTF* m_tpsCheck = nullptr;
@@ -160,7 +164,7 @@ protected:
     int m_activePage = 0;
 
     bool isRussian() {
-        return Mod::get()->getSavedValue<bool>("ui-russian", false);
+        return Mod::get()->getSavedValue<bool>("ui-russian", true);
     }
 
     const char* tr(const char* en, const char* ru) {
@@ -338,9 +342,9 @@ protected:
     }
 
     void setPage(int index) {
-        if (index < 0 || index >= 4) return;
+        if (index < 0 || index >= 3) return;
         m_activePage = index;
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 3; ++i) {
             if (m_pages[i]) m_pages[i]->setVisible(i == index);
             if (m_tabLabels[i]) m_tabLabels[i]->setColor(i == index
                 ? ccc3(245, 247, 252) : ccc3(170, 179, 195));
@@ -360,89 +364,64 @@ protected:
         const float h = size.height;
 
         this->setTitle("");
-        if (m_buttonMenu) m_buttonMenu->setContentSize(win);
-        if (m_bgSprite) m_bgSprite->removeMeAndCleanup();
+        m_buttonMenu->setContentSize(win);
+        m_closeBtn->setPosition({20.f, win.height - 20.f});
+        m_bgSprite->removeMeAndCleanup();
 
-        // Eclipse Popup composition: NineSlice frame, sidebar tabs, and a content view.
         auto border = geode::NineSlice::create("square02b_001.png");
-        border->setContentSize({w, h});
-        border->setColor(ccc3(12, 15, 24));
-        m_mainLayer->addChildAtPosition(border, geode::Anchor::Center, {0.f, 0.f}, -2);
+        border->setContentSize(size);
+        border->setColor(ccc3(24, 26, 32));
+        m_mainLayer->addChildAtPosition(border, geode::Anchor::Center);
 
         auto background = geode::NineSlice::create("square02b_001.png");
-        background->setContentSize({w - 4.f, h - 4.f});
-        background->setColor(ccc3(27, 29, 36));
-        m_mainLayer->addChildAtPosition(background, geode::Anchor::Center, {0.f, 0.f}, -1);
-
-        m_titleLabel = addText(m_mainLayer, "GD CONTROL",
-            {w * 0.5f, h - 23.f}, 22.f, ccc3(239, 241, 247));
-
-        auto langBG = geode::NineSlice::create("square02b_001.png", {0.f, 0.f, 80.f, 80.f});
-        langBG->setContentSize({42.f, 25.f});
-        langBG->setColor(ccc3(48, 68, 105));
-        auto langText = CCLabelTTF::create(isRussian() ? "RU" : "EN", "Arial", 11.f);
-        langText->setColor(ccc3(240, 243, 250));
-        langText->setPosition({21.f, 12.5f});
-        langBG->addChild(langText, 2);
-        auto langButton = geode::Button::createWithNode(
-            langBG, [this](geode::Button*) { onToggleLanguage(nullptr); });
-        langButton->setPosition({w - 34.f, h - 23.f});
-        langButton->setAnimationType(geode::Button::AnimationType::Scale);
-        m_mainLayer->addChild(langButton, 50);
-        m_languageLabel = langText;
-
-        const float contentTop = h - 43.f;
-        const float contentBottom = 10.f;
-        const float contentH = contentTop - contentBottom;
-        constexpr float sideX = 6.f;
-        constexpr float sideW = 115.f;
-        constexpr float contentX = 125.f;
-        constexpr float contentW = 345.f;
-
-        auto sideBG = geode::NineSlice::create("square02b_001.png");
-        sideBG->setAnchorPoint({0.f, 0.5f});
-        sideBG->setContentSize({sideW, contentH});
-        sideBG->setColor(ccc3(34, 37, 45));
-        sideBG->setPosition({sideX, (contentTop + contentBottom) * 0.5f});
-        m_mainLayer->addChild(sideBG, 1);
+        background->setContentSize(size - 3.f);
+        background->setColor(ccc3(43, 45, 52));
+        m_mainLayer->addChildAtPosition(background, geode::Anchor::Center);
 
         auto contentBG = geode::NineSlice::create("square02b_001.png");
         contentBG->setAnchorPoint({0.f, 1.f});
-        contentBG->setContentSize({contentW, contentH});
-        contentBG->setColor(ccc3(25, 28, 35));
-        contentBG->setPosition({contentX, contentTop});
-        m_mainLayer->addChild(contentBG, 1);
+        contentBG->setPosition({125.f, 270.f});
+        contentBG->setContentSize({345.f, 260.f});
+        contentBG->setColor(ccc3(35, 37, 44));
+        m_mainLayer->addChild(contentBG, 0);
 
-        const char* navEn[4] = {"PLAYER", "UNLOCKS", "BYPASS", "ACHIEVEMENTS"};
-        const char* navRu[4] = {"ИГРОК", "РАЗБЛОКИРОВКИ", "ОБХОДЫ", "ДОСТИЖЕНИЯ"};
-        for (int i = 0; i < 4; ++i) {
+        auto tabBG = geode::NineSlice::create("square02b_001.png");
+        tabBG->setAnchorPoint({0.f, 0.5f});
+        tabBG->setPosition({6.f, 140.f});
+        tabBG->setContentSize({115.f, 260.f});
+        tabBG->setColor(ccc3(35, 37, 44));
+        m_mainLayer->addChild(tabBG, 0);
+
+        constexpr float contentW = 345.f;
+        constexpr float contentH = 260.f;
+        const char* navEn[3] = {"PLAYER", "UNLOCKS", "BYPASS"};
+        const char* navRu[3] = {"ИГРОК", "РАЗБЛОКИРОВКИ", "ОБХОДЫ"};
+        for (int i = 0; i < 3; ++i) {
             auto tabNode = CCNode::create();
             tabNode->setContentSize({120.f, 28.f});
-            auto tabBG = geode::NineSlice::create("square02b_001.png", {0.f, 0.f, 80.f, 80.f});
-            tabBG->setContentSize({120.f, 36.f});
-            tabBG->setScaleY(0.75f);
-            tabNode->addChildAtPosition(tabBG, geode::Anchor::Center);
-
-            auto label = CCLabelTTF::create(isRussian() ? navRu[i] : navEn[i], "Arial", 10.f);
-            label->setColor(i == 0 ? ccc3(245, 247, 252) : ccc3(170, 179, 195));
-            if (label->getContentSize().width > 108.f)
-                label->setScale(108.f / label->getContentSize().width);
+            tabNode->setScale(0.9f);
+            auto tabSprite = geode::NineSlice::create("square02b_001.png", {0.f, 0.f, 80.f, 80.f});
+            tabSprite->setContentSize({120.f, 36.f});
+            tabSprite->setScaleY(0.75f);
+            tabNode->addChildAtPosition(tabSprite, geode::Anchor::Center);
+            auto label = CCLabelTTF::create(isRussian() ? navRu[i] : navEn[i], "Arial", 12.f);
+            label->setColor(i == 0 ? ccc3(255, 255, 255) : ccc3(190, 193, 201));
+            if (label->getContentSize().width > 100.f)
+                label->setScale(100.f / label->getContentSize().width);
             tabNode->addChildAtPosition(label, geode::Anchor::Center);
-
-            auto button = geode::Button::createWithNode(
-                tabNode, [this, i](geode::Button*) { setPage(i); });
-            button->setPosition({sideX + sideW * 0.5f, contentTop - 35.f - i * 42.f});
+            auto button = geode::Button::createWithNode(tabNode,
+                [this, i](geode::Button*) { setPage(i); });
+            button->setPosition({67.5f, 246.f - i * 28.5f});
             button->setAnimationType(geode::Button::AnimationType::Scale);
-            m_mainLayer->addChild(button, 20);
+            m_mainLayer->addChild(button, 10);
             m_tabLabels[i] = label;
-            m_tabBgs[i] = tabBG;
+            m_tabBgs[i] = tabSprite;
         }
-
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 3; ++i) {
             m_pages[i] = CCNode::create();
             m_pages[i]->setContentSize({contentW, contentH});
             m_pages[i]->setAnchorPoint({0.f, 1.f});
-            m_pages[i]->setPosition({contentX, contentTop});
+            m_pages[i]->setPosition({125.f, 270.f});
             m_mainLayer->addChild(m_pages[i], 5);
         }
 
@@ -534,7 +513,10 @@ protected:
         addComponentRow(m_pages[1], 0, tr("Unlock Icons", "Разблокировка иконок"),
             m_iconsTitle, m_iconsCheck, isUnlockIconsEnabled(),
             [this]() { onToggleIcons(nullptr); });
-        addComponentRow(m_pages[1], 1, tr("Practice Music", "Музыка в практике"),
+        addComponentRow(m_pages[1], 1, tr("Unlock Colors", "Открыть все цвета"),
+            m_colorsTitle, m_colorsCheck, isUnlockColorsEnabled(),
+            [this]() { onToggleColors(nullptr); });
+        addComponentRow(m_pages[1], 2, tr("Practice Music", "Музыка в практике"),
             m_musicTitle, m_musicCheck, isPracticeMusicEnabled(),
             [this]() { onTogglePracticeMusic(nullptr); });
 
@@ -551,45 +533,15 @@ protected:
         addValueControls(fpsRow, m_fpsValue, fmt::format("{} FPS", getFPSBypassValue()).c_str(),
             [this]() { onFPSDown(nullptr); }, [this]() { onFPSUp(nullptr); }, 260.f);
 
-        auto achievementTitle = addText(m_pages[3],
-            tr("ACHIEVEMENT MANAGER", "МЕНЕДЖЕР ДОСТИЖЕНИЙ"),
-            {contentW * 0.5f, contentH - 42.f}, 17.f, ccc3(238, 241, 248), contentW - 24.f);
-        auto achievementInfo = addText(m_pages[3],
-            tr("Browse the game's native achievement catalogue.",
-               "Просмотр встроенного списка достижений игры."),
-            {contentW * 0.5f, contentH - 72.f}, 10.f, ccc3(174, 184, 201), contentW - 24.f);
-        auto achievementManager = AchievementManager::sharedState();
-        const auto totalAchievements = achievementManager && achievementManager->getAllAchievements()
-            ? achievementManager->getAllAchievements()->count() : 0;
-        m_achievementCountLabel = addText(m_pages[3],
-            fmt::format("{} {}", totalAchievements,
-                tr("achievements in game", "достижений в игре")).c_str(),
-            {contentW * 0.5f, contentH - 112.f}, 13.f, ccc3(202, 187, 255), contentW - 24.f);
-        addActionButton(m_pages[3], tr("Open achievements", "Открыть достижения"),
-            {contentW * 0.5f, contentH - 160.f}, 190.f, 30.f,
-            [this]() { onOpenAchievements(nullptr); });
-        addText(m_pages[3],
-            tr("Progress and rewards are handled by Geometry Dash.",
-               "Прогресс и награды обрабатывает сама Geometry Dash."),
-            {contentW * 0.5f, contentH - 202.f}, 9.f, ccc3(137, 149, 171), contentW - 24.f);
-
-        m_hintLabel = addText(m_mainLayer,
-            tr("Local settings · changes apply instantly",
-               "Локальные настройки · изменения применяются сразу"),
-            {w * 0.5f, 5.f}, 8.f, ccc3(137, 149, 171), w * 0.72f);
-
         setPage(0);
         refreshValues();
         return true;
     }
 
     void refreshValues() {
-        if (m_titleLabel) m_titleLabel->setString("GD CONTROL");
-        if (m_languageLabel) m_languageLabel->setString(isRussian() ? "RU" : "EN");
         if (m_tabLabels[0]) m_tabLabels[0]->setString(tr("PLAYER", "ИГРОК"));
         if (m_tabLabels[1]) m_tabLabels[1]->setString(tr("UNLOCKS", "РАЗБЛОКИРОВКИ"));
         if (m_tabLabels[2]) m_tabLabels[2]->setString(tr("BYPASS", "ОБХОДЫ"));
-        if (m_tabLabels[3]) m_tabLabels[3]->setString(tr("ACHIEVEMENTS", "ДОСТИЖЕНИЯ"));
 
         if (m_noclipTitle) m_noclipTitle->setString(tr("No-Clip", "Ноуклип"));
         if (m_speedTitle) m_speedTitle->setString(tr("Speedhack", "Ускорение"));
@@ -597,6 +549,7 @@ protected:
         if (m_autoHoldTitle) m_autoHoldTitle->setString(tr("Press", "Нажатие"));
         if (m_autoReleaseTitle) m_autoReleaseTitle->setString(tr("Release", "Отпускание"));
         if (m_iconsTitle) m_iconsTitle->setString(tr("Unlock Icons", "Разблокировка иконок"));
+        if (m_colorsTitle) m_colorsTitle->setString(tr("Unlock Colors", "Открыть все цвета"));
         if (m_musicTitle) m_musicTitle->setString(tr("Practice Music", "Музыка в практике"));
         if (m_tpsTitle) m_tpsTitle->setString(tr("TPS Bypass", "Обход TPS"));
         if (m_fpsTitle) m_fpsTitle->setString(tr("FPS Bypass", "Обход FPS"));
@@ -605,6 +558,7 @@ protected:
 
         if (m_noclipCheck) m_noclipCheck->setString(isNoclipEnabled() ? "✓" : "");
         if (m_iconsCheck) m_iconsCheck->setString(isUnlockIconsEnabled() ? "✓" : "");
+        if (m_colorsCheck) m_colorsCheck->setString(isUnlockColorsEnabled() ? "✓" : "");
         if (m_musicCheck) m_musicCheck->setString(isPracticeMusicEnabled() ? "✓" : "");
         if (m_autoCheck) m_autoCheck->setString(isAutoClickerEnabled() ? "✓" : "");
         if (m_tpsCheck) m_tpsCheck->setString(isTPSBypassEnabled() ? "✓" : "");
@@ -616,23 +570,6 @@ protected:
         if (m_tpsValue) m_tpsValue->setString(fmt::format("{} TPS", getTPSBypassValue()).c_str());
         if (m_fpsValue) m_fpsValue->setString(fmt::format("{} FPS", getFPSBypassValue()).c_str());
 
-        if (m_hintLabel) m_hintLabel->setString(tr(
-            "Local settings · changes apply instantly",
-            "Локальные настройки · изменения применяются сразу"));
-    }
-
-    void onOpenAchievements(CCObject*) {
-        auto layer = AchievementsLayer::create();
-        auto scene = CCDirector::sharedDirector()->getRunningScene();
-        if (!layer || !scene) {
-            Notification::create(
-                tr("Could not open achievements", "Не удалось открыть достижения"),
-                NotificationIcon::Error, 2.f
-            )->show();
-            return;
-        }
-        scene->addChild(layer, 100);
-        layer->showLayer(false);
     }
 
     void onInstantComplete(CCObject*) {
@@ -648,17 +585,16 @@ protected:
         layer->levelComplete();
     }
 
-    void onToggleLanguage(CCObject*) {
-        Mod::get()->setSavedValue<bool>("ui-russian", !isRussian());
-        refreshValues();
-    }
-
     void onToggleNoclip(CCObject*) {
         Mod::get()->setSettingValue<bool>("noclip-enabled", !isNoclipEnabled());
         refreshValues();
     }
     void onToggleIcons(CCObject*) {
         Mod::get()->setSettingValue<bool>("unlock-icons", !isUnlockIconsEnabled());
+        refreshValues();
+    }
+    void onToggleColors(CCObject*) {
+        Mod::get()->setSettingValue<bool>("unlock-colors", !isUnlockColorsEnabled());
         refreshValues();
     }
     void onTogglePracticeMusic(CCObject*) {
@@ -1027,10 +963,13 @@ class $modify(GDControlStatsManager, GameStatsManager) {
 
 class $modify(GDControlGameManager, GameManager) {
     bool isIconUnlocked(int iconID, IconType type) {
-        if (isUnlockIconsEnabled()) {
-            return true;
-        }
+        if (isUnlockIconsEnabled()) return true;
         return GameManager::isIconUnlocked(iconID, type);
+    }
+
+    bool isColorUnlocked(int colorID, UnlockType type) {
+        if (isUnlockColorsEnabled()) return true;
+        return GameManager::isColorUnlocked(colorID, type);
     }
 
     void updateCustomFPS() {
@@ -1044,7 +983,7 @@ class $modify(GDControlGameManager, GameManager) {
 };
 
 $on_mod(Loaded) {
-    log::info("GD Control v0.2.3 loaded for Geometry Dash 2.2091.");
+    log::info("GD Control v0.2.5 loaded for Geometry Dash 2.2091.");
     installFloatingButton();
     if (isFPSBypassEnabled()) applyFPSBypass();
 }

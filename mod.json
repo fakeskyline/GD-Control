@@ -5,9 +5,9 @@
   },
   "id": "fakeskyline.gdcontrol",
   "name": "GD Control",
-  "version": "v0.2.4",
+  "version": "v0.2.5",
   "developer": "fakeskyline",
-  "description": "A mobile-friendly Geometry Dash mod menu with No-Clip, Speedhack, Instant Complete, local icon unlock, Practice Music Sync, Auto Clicker, TPS Bypass and FPS Bypass and Achievement Manager.",
+  "description": "A mobile-friendly Geometry Dash mod menu with No-Clip, Speedhack, Instant Complete, Unlock Icons, Unlock Colors, Practice Music Sync, Auto Clicker, TPS Bypass and FPS Bypass.",
   "repository": "https://github.com/fakeskyline/GD-Control",
   "tags": [
     "gameplay",
@@ -34,6 +34,12 @@
     "unlock-icons": {
       "name": "Unlock Icons",
       "description": "Locally treats every icon as unlocked. Does not write unlocks to your RobTop account.",
+      "type": "bool",
+      "default": false
+    },
+    "unlock-colors": {
+      "name": "Unlock Colors",
+      "description": "Locally treats all primary, secondary and glow colors as unlocked. Does not write unlocks to your RobTop account.",
       "type": "bool",
       "default": false
     },
