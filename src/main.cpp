@@ -154,6 +154,9 @@ protected:
     CCLabelTTF* m_fpsAction = nullptr;
     CCLabelTTF* m_instantCompleteTitle = nullptr;
     CCLabelTTF* m_colorsTitle = nullptr;
+    CCLabelTTF* m_levelSmartCheck = nullptr;
+    CCLabelTTF* m_levelKillCheck = nullptr;
+    CCLabelTTF* m_levelKillPercent = nullptr;
 
     float m_cardTitleMaxWidth = 0.f;
     CCNode* m_pages[4] = { nullptr, nullptr, nullptr, nullptr };
@@ -580,9 +583,8 @@ protected:
 
         // LEVEL
         CCLabelTTF* smartTitle = nullptr;
-        CCLabelTTF* smartCheck = nullptr;
         addComponentRow(m_pages[3], 0, tr("Smart Start Pos", "Умные старт-позиции"),
-            smartTitle, smartCheck,
+            smartTitle, m_levelSmartCheck,
             Mod::get()->getSettingValue<bool>("smart-startpos-enabled"),
             [this]() {
                 auto mod = Mod::get();
@@ -592,9 +594,8 @@ protected:
             });
 
         CCLabelTTF* killTitle = nullptr;
-        CCLabelTTF* killCheck = nullptr;
         addComponentRow(m_pages[3], 1, tr("Auto Kill At %", "Авто-смерть на %"),
-            killTitle, killCheck,
+            killTitle, m_levelKillCheck,
             Mod::get()->getSettingValue<bool>("auto-kill-enabled"),
             [this]() {
                 auto mod = Mod::get();
@@ -605,7 +606,7 @@ protected:
 
         auto killPercentRow = addPlainRow(m_pages[3], 2,
             tr("Kill percentage", "Процент смерти"), m_speedTitle);
-        addValueControls(killPercentRow, m_speedLabel,
+        addValueControls(killPercentRow, m_levelKillPercent,
             fmt::format("{}%", static_cast<int>(Mod::get()->getSettingValue<float>("auto-kill-percent"))).c_str(),
             [this]() {
                 auto mod = Mod::get();
@@ -637,6 +638,12 @@ protected:
         if (m_tabLabels[1]) m_tabLabels[1]->setString(tr("UNLOCKS", "РАЗБЛОКИРОВКИ"));
         if (m_tabLabels[2]) m_tabLabels[2]->setString(tr("BYPASS", "ОБХОДЫ"));
         if (m_tabLabels[3]) m_tabLabels[3]->setString(tr("LEVEL", "УРОВЕНЬ"));
+        if (m_levelSmartCheck) m_levelSmartCheck->setString(
+            Mod::get()->getSettingValue<bool>("smart-startpos-enabled") ? "✓" : "");
+        if (m_levelKillCheck) m_levelKillCheck->setString(
+            Mod::get()->getSettingValue<bool>("auto-kill-enabled") ? "✓" : "");
+        if (m_levelKillPercent) m_levelKillPercent->setString(fmt::format("{}%",
+            static_cast<int>(Mod::get()->getSettingValue<float>("auto-kill-percent"))).c_str());
 
         if (m_noclipTitle) m_noclipTitle->setString(tr("No-Clip", "Ноуклип"));
         if (m_speedTitle) m_speedTitle->setString(tr("Speedhack", "Ускорение"));
