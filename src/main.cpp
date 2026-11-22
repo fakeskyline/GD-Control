@@ -1,7 +1,5 @@
 #include <Geode/Geode.hpp>
 #include <Geode/ui/Popup.hpp>
-#include <Geode/ui/Button.hpp>
-#include <Geode/ui/NineSlice.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/CCScheduler.hpp>
@@ -12,7 +10,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <functional>
 
 using namespace geode::prelude;
 
@@ -45,20 +42,20 @@ namespace {
 
 class GDControlPopup : public Popup {
 protected:
-    CCLabelBMFont* m_noclipLabel = nullptr;
-    CCLabelBMFont* m_speedLabel = nullptr;
-    CCLabelBMFont* m_iconsLabel = nullptr;
-    CCLabelBMFont* m_practiceMusicLabel = nullptr;
-    CCLabelBMFont* m_languageLabel = nullptr;
-    CCLabelBMFont* m_noclipTitle = nullptr;
-    CCLabelBMFont* m_speedTitle = nullptr;
-    CCLabelBMFont* m_iconsTitle = nullptr;
-    CCLabelBMFont* m_musicTitle = nullptr;
-    CCLabelBMFont* m_noclipAction = nullptr;
-    CCLabelBMFont* m_iconsAction = nullptr;
-    CCLabelBMFont* m_musicAction = nullptr;
-    CCLabelBMFont* m_hintLabel = nullptr;
-    float m_cardTitleMaxWidth = 0.f;
+    CCLabelTTF* m_noclipLabel = nullptr;
+    CCLabelTTF* m_speedLabel = nullptr;
+    CCLabelTTF* m_iconsLabel = nullptr;
+    CCLabelTTF* m_practiceMusicLabel = nullptr;
+    CCLabelTTF* m_titleLabel = nullptr;
+    CCLabelTTF* m_languageLabel = nullptr;
+    CCLabelTTF* m_noclipTitle = nullptr;
+    CCLabelTTF* m_speedTitle = nullptr;
+    CCLabelTTF* m_iconsTitle = nullptr;
+    CCLabelTTF* m_musicTitle = nullptr;
+    CCLabelTTF* m_noclipButtonLabel = nullptr;
+    CCLabelTTF* m_iconsButtonLabel = nullptr;
+    CCLabelTTF* m_musicButtonLabel = nullptr;
+    CCLabelTTF* m_hintLabel = nullptr;
 
     bool isRussian() {
         return Mod::get()->getSavedValue<bool>("ui-russian", false);
@@ -68,90 +65,80 @@ protected:
         return isRussian() ? ru : en;
     }
 
-    CCLabelBMFont* addText(CCNode* parent, const char* text, CCPoint pos,
-                        float fontSize, ccColor3B color, float maxWidth = 0.f) {
-        auto label = CCLabelBMFont::create(text, "GoogleSans.fnt"_spr);
-        const float baseScale = fontSize / 80.f;
-        label->setScale(baseScale);
+    CCLabelTTF* addText(const char* text, CCPoint pos, float size, ccColor3B color,
+                        CCNode* parent = nullptr) {
+        auto label = CCLabelTTF::create(text, "Arial", size);
         label->setColor(color);
         label->setAnchorPoint({0.5f, 0.5f});
-        if (maxWidth > 0.f && label->getContentSize().width * baseScale > maxWidth) {
-            label->setScale(baseScale * maxWidth / label->getContentSize().width);
-        }
         label->setPosition(pos);
-        parent->addChild(label);
+        (parent ? parent : static_cast<CCNode*>(m_mainLayer))->addChild(label);
         return label;
     }
 
-    geode::NineSlice* makeSurface(CCSize size, ccColor3B color) {
-        auto surface = geode::NineSlice::create(
-            "md3_round.png"_spr, {}, {16.f, 16.f, 16.f, 16.f}
-        );
-        surface->setContentSize(size);
-        surface->setColor(color);
-        surface->setOpacity(255);
-        return surface;
-    }
-
-    geode::Button* makeButton(CCNode* parent, const char* text, CCPoint pos,
-                                  CCSize size, std::function<void()> callback,
-                                  bool primary = false, CCLabelBMFont** outLabel = nullptr) {
-        auto bg = makeSurface(size, primary ? ccc3(75, 94, 166) : ccc3(58, 62, 76));
-        auto label = CCLabelBMFont::create(text, "GoogleSans.fnt"_spr);
-        label->setScale(15.f / 80.f);
-        label->setColor(primary ? ccc3(30, 39, 64) : ccc3(220, 222, 235));
-        label->setPosition({size.width * 0.5f, size.height * 0.5f});
-        bg->addChild(label);
-        if (outLabel) *outLabel = label;
-
-        auto button = geode::Button::createWithNode(bg, [callback](geode::Button*) {
-            callback();
-        });
-        button->setPosition(pos);
-        button->setAnimationType(geode::Button::AnimationType::Scale);
-        button->setScaleMultiplier(0.97f);
-        parent->addChild(button, 5);
-        return button;
-    }
-
-    CCNode* createCard(float centerX, float centerY, float cardW, float cardH) {
-        auto card = CCNode::create();
-        card->setContentSize({cardW, cardH});
-        card->setAnchorPoint({0.5f, 0.5f});
-        card->setPosition({centerX, centerY});
-        auto bg = makeSurface({cardW, cardH}, ccc3(42, 46, 58));
-        bg->setPosition({cardW * 0.5f, cardH * 0.5f});
-        card->addChild(bg);
-        m_mainLayer->addChild(card, 2);
+    CCNode* addCard(float x, float y, float w, float h) {
+        auto card = CCLayerColor::create(ccc4(39, 45, 58, 255), w, h);
+        card->setPosition({x - w * 0.5f, y - h * 0.5f});
+        m_mainLayer->addChild(card, 1);
         return card;
     }
 
-    void addToggleCard(float centerX, float centerY, float cardW, float cardH,
-                       const char* title, const char* status, bool enabled,
-                       CCLabelBMFont*& titleLabel, CCLabelBMFont*& statusLabel,
-                       CCLabelBMFont*& actionLabel, std::function<void()> callback) {
-        auto card = createCard(centerX, centerY, cardW, cardH);
-        titleLabel = addText(card, title, {cardW * 0.5f, cardH * 0.76f},
-                             18.f, ccc3(229, 226, 238), cardW * 0.88f);
-        statusLabel = addText(card, status, {cardW * 0.5f, cardH * 0.49f},
-                              14.f, enabled ? ccc3(190, 210, 255) : ccc3(177, 180, 194));
-        auto button = makeButton(card, tr("Toggle", "Переключить"),
-                                 {cardW * 0.5f, cardH * 0.20f},
-                                 {std::min(154.f, cardW * 0.56f), 38.f},
-                                 callback, true, &actionLabel);
+    CCMenuItemSpriteExtra* addActionButton(const char* text, CCPoint pos, float w,
+                                           SEL_MenuHandler callback) {
+        auto bg = CCLayerColor::create(ccc4(65, 105, 220, 255), w, 42.f);
+        auto label = CCLabelTTF::create(text, "Arial", 17.f);
+        label->setColor(ccc3(255, 255, 255));
+        label->setPosition({w * 0.5f, 21.f});
+        bg->addChild(label);
+        auto item = CCMenuItemSpriteExtra::create(bg, this, callback);
+        item->setPosition(pos);
+        m_buttonMenu->addChild(item);
+        return item;
     }
 
-    void addSpeedCard(float centerX, float centerY, float cardW, float cardH) {
-        auto card = createCard(centerX, centerY, cardW, cardH);
-        m_speedTitle = addText(card, tr("SPEEDHACK", "УСКОРЕНИЕ"),
-                               {cardW * 0.5f, cardH * 0.76f}, 18.f,
-                               ccc3(229, 226, 238), cardW * 0.88f);
-        m_speedLabel = addText(card, "", {cardW * 0.5f, cardH * 0.40f},
-                               23.f, ccc3(208, 188, 255));
-        makeButton(card, "−", {cardW * 0.25f, cardH * 0.40f},
-                   {44.f, 38.f}, [this] { onSpeedDown(nullptr); });
-        makeButton(card, "+", {cardW * 0.75f, cardH * 0.40f},
-                   {44.f, 38.f}, [this] { onSpeedUp(nullptr); });
+    CCMenuItemSpriteExtra* addSmallButton(const char* text, CCPoint pos,
+                                          SEL_MenuHandler callback) {
+        auto bg = CCLayerColor::create(ccc4(65, 105, 220, 255), 42.f, 38.f);
+        auto label = CCLabelTTF::create(text, "Arial", 20.f);
+        label->setColor(ccc3(255, 255, 255));
+        label->setPosition({21.f, 19.f});
+        bg->addChild(label);
+        auto item = CCMenuItemSpriteExtra::create(bg, this, callback);
+        item->setPosition(pos);
+        m_buttonMenu->addChild(item);
+        return item;
+    }
+
+    void buildCard(float centerX, float centerY, float cardW, float cardH,
+                   const char* title, CCLabelTTF*& titleLabel,
+                   CCLabelTTF*& statusLabel, CCLabelTTF*& buttonLabel,
+                   const char* status, SEL_MenuHandler callback,
+                   bool speedCard = false) {
+        auto card = addCard(centerX, centerY, cardW, cardH);
+        titleLabel = addText(title, {cardW * 0.5f, cardH * 0.76f}, 19.f,
+                             ccc3(224, 229, 240), card);
+        if (speedCard) {
+            m_speedLabel = addText(status, {cardW * 0.5f, cardH * 0.39f}, 23.f,
+                                   ccc3(190, 205, 255), card);
+            addSmallButton("-", {centerX - cardW * 0.27f, centerY - cardH * 0.11f},
+                           menu_selector(GDControlPopup::onSpeedDown));
+            addSmallButton("+", {centerX + cardW * 0.27f, centerY - cardH * 0.11f},
+                           menu_selector(GDControlPopup::onSpeedUp));
+        } else {
+            statusLabel = addText(status, {cardW * 0.5f, cardH * 0.48f}, 15.f,
+                                  ccc3(174, 190, 214), card);
+            buttonLabel = addText("", {cardW * 0.5f, 21.f}, 1.f,
+                                  ccc3(255, 255, 255), card);
+            buttonLabel->setVisible(false);
+            auto btn = CCLayerColor::create(ccc4(65, 105, 220, 255), std::min(150.f, cardW * 0.62f), 40.f);
+            auto btnText = CCLabelTTF::create(tr("Change", "Изменить"), "Arial", 16.f);
+            btnText->setColor(ccc3(255, 255, 255));
+            btnText->setPosition({btn->getContentSize().width * 0.5f, 20.f});
+            btn->addChild(btnText);
+            auto item = CCMenuItemSpriteExtra::create(btn, this, callback);
+            item->setPosition({centerX, centerY - cardH * 0.22f});
+            m_buttonMenu->addChild(item);
+            buttonLabel = btnText;
+        }
     }
 
     bool init() {
@@ -164,94 +151,82 @@ protected:
         const float w = size.width;
         const float h = size.height;
 
-        auto surface = makeSurface({w, h}, ccc3(27, 28, 34));
-        surface->setPosition({w * 0.5f, h * 0.5f});
-        m_mainLayer->addChild(surface, 0);
+        auto surface = CCLayerColor::create(ccc4(25, 29, 38, 255), w, h);
+        surface->setPosition({0.f, 0.f});
+        m_mainLayer->addChild(surface, -10);
 
-        addText(m_mainLayer, "GD CONTROL", {w * 0.5f, h * 0.91f},
-                25.f, ccc3(242, 240, 248));
-        auto langBg = makeSurface({66.f, 32.f}, ccc3(54, 58, 72));
-        auto langText = CCLabelBMFont::create("EN", "GoogleSans.fnt"_spr);
-        langText->setScale(13.f / 80.f);
-        langText->setColor(ccc3(224, 222, 236));
-        langText->setPosition({33.f, 16.f});
+        m_titleLabel = addText("GD CONTROL", {w * 0.5f, h * 0.91f}, 25.f,
+                               ccc3(238, 241, 248));
+        m_languageLabel = addText("", {w * 0.84f, h * 0.91f}, 13.f,
+                                  ccc3(190, 205, 255));
+        auto langBg = CCLayerColor::create(ccc4(49, 58, 76, 255), 74.f, 32.f);
+        auto langText = CCLabelTTF::create("", "Arial", 13.f);
+        langText->setColor(ccc3(220, 228, 245));
+        langText->setPosition({37.f, 16.f});
         langBg->addChild(langText);
-        auto langButton = geode::Button::createWithNode(langBg, [this](geode::Button*) {
-            onToggleLanguage(nullptr);
-        });
-        langButton->setPosition({w * 0.87f, h * 0.91f});
-        m_mainLayer->addChild(langButton, 10);
         m_languageLabel = langText;
+        auto langItem = CCMenuItemSpriteExtra::create(langBg, this, menu_selector(GDControlPopup::onToggleLanguage));
+        langItem->setPosition({w * 0.84f, h * 0.91f});
+        m_buttonMenu->addChild(langItem);
 
         const bool landscape = w >= h * 1.15f;
-        const float gapX = landscape ? w * 0.035f : 0.f;
-        const float cardW = landscape ? (w - gapX * 3.f) * 0.5f : w * 0.88f;
-        const float cardH = landscape ? h * 0.30f : h * 0.17f;
-        m_cardTitleMaxWidth = cardW * 0.88f;
-        const float leftX = landscape ? w * 0.25f : w * 0.5f;
-        const float rightX = landscape ? w * 0.75f : w * 0.5f;
-        const float topY = h * 0.68f;
-        const float bottomY = landscape ? h * 0.32f : h * 0.15f;
+        const float gap = landscape ? w * 0.035f : w * 0.04f;
+        const float cardW = landscape ? (w - gap * 3.f) * 0.5f : w * 0.86f;
+        const float cardH = landscape ? h * 0.29f : h * 0.165f;
+        const float top = h * 0.69f;
+        const float bottom = landscape ? h * 0.34f : h * 0.17f;
+        const float left = landscape ? w * 0.25f : w * 0.5f;
+        const float right = landscape ? w * 0.75f : w * 0.5f;
 
-        addToggleCard(leftX, topY, cardW, cardH,
-                      tr("NO-CLIP", "НОУКЛИП"),
-                      isNoclipEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"),
-                      isNoclipEnabled(), m_noclipTitle, m_noclipLabel, m_noclipAction,
-                      [this] { onToggleNoclip(nullptr); });
-        addSpeedCard(rightX, topY, cardW, cardH);
-        addToggleCard(leftX, bottomY, cardW, cardH,
-                      tr("UNLOCK ICONS", "РАЗБЛОКИРОВКА ИКОНОК"),
-                      isUnlockIconsEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"),
-                      isUnlockIconsEnabled(), m_iconsTitle, m_iconsLabel, m_iconsAction,
-                      [this] { onToggleIcons(nullptr); });
-        addToggleCard(rightX, bottomY, cardW, cardH,
-                      tr("PRACTICE MUSIC", "МУЗЫКА В ПРАКТИКЕ"),
-                      isPracticeMusicEnabled() ? tr("Unlocked", "Разблокировано") : tr("Locked", "Заблокировано"),
-                      isPracticeMusicEnabled(), m_musicTitle, m_practiceMusicLabel, m_musicAction,
-                      [this] { onTogglePracticeMusic(nullptr); });
+        buildCard(left, top, cardW, cardH, tr("NO-CLIP", "НОУКЛИП"),
+                  m_noclipTitle, m_noclipLabel, m_noclipButtonLabel,
+                  isNoclipEnabled() ? "ON" : "OFF",
+                  menu_selector(GDControlPopup::onToggleNoclip));
+        buildCard(right, top, cardW, cardH, tr("SPEEDHACK", "УСКОРЕНИЕ"),
+                  m_speedTitle, m_speedLabel, m_speedButtonLabel,
+                  fmt::format("{:.2f}x", getSpeedMultiplier()).c_str(),
+                  nullptr, true);
+        buildCard(left, bottom, cardW, cardH, tr("UNLOCK ICONS", "РАЗБЛОКИРОВКА ИКОНОК"),
+                  m_iconsTitle, m_iconsLabel, m_iconsButtonLabel,
+                  isUnlockIconsEnabled() ? "ON" : "OFF",
+                  menu_selector(GDControlPopup::onToggleIcons));
+        buildCard(right, bottom, cardW, cardH, tr("PRACTICE MUSIC", "МУЗЫКА В ПРАКТИКЕ"),
+                  m_musicTitle, m_practiceMusicLabel, m_musicButtonLabel,
+                  isPracticeMusicEnabled() ? "ON" : "OFF",
+                  menu_selector(GDControlPopup::onTogglePracticeMusic));
 
-        m_hintLabel = addText(m_mainLayer,
-            tr("Local settings · changes apply instantly",
-               "Локальные настройки · изменения применяются сразу"),
-            {w * 0.5f, h * 0.045f}, 12.f, ccc3(160, 163, 177), w * 0.78f);
+        m_hintLabel = addText(tr("Local settings • changes apply instantly",
+                                 "Локальные настройки • изменения сразу применяются"),
+                              {w * 0.5f, h * 0.045f}, 12.f,
+                              ccc3(137, 149, 171));
         refreshValues();
         return true;
     }
 
     void refreshValues() {
-        if (m_noclipLabel) m_noclipLabel->setString(isNoclipEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"));
+        if (m_noclipLabel) m_noclipLabel->setString(isNoclipEnabled() ? "ON" : "OFF");
         if (m_speedLabel) m_speedLabel->setString(fmt::format("{:.2f}x", getSpeedMultiplier()).c_str());
-        if (m_iconsLabel) m_iconsLabel->setString(isUnlockIconsEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"));
-        if (m_practiceMusicLabel) m_practiceMusicLabel->setString(isPracticeMusicEnabled() ? tr("Unlocked", "Разблокировано") : tr("Locked", "Заблокировано"));
-        auto fitTitle = [this](CCLabelBMFont* label) {
-            if (!label) return;
-            constexpr float baseScale = 18.f / 80.f;
-            const float renderedWidth = label->getContentSize().width * baseScale;
-            const float fit = renderedWidth > m_cardTitleMaxWidth
-                ? m_cardTitleMaxWidth / renderedWidth
-                : 1.f;
-            label->setScale(baseScale * fit);
-        };
+        if (m_iconsLabel) m_iconsLabel->setString(isUnlockIconsEnabled() ? "ON" : "OFF");
+        if (m_practiceMusicLabel) m_practiceMusicLabel->setString(isPracticeMusicEnabled() ? "ON" : "OFF");
+
+        if (m_titleLabel) m_titleLabel->setString("GD CONTROL");
+        if (m_languageLabel) m_languageLabel->setString(isRussian() ? "RU" : "EN");
         if (m_noclipTitle) m_noclipTitle->setString(tr("NO-CLIP", "НОУКЛИП"));
         if (m_speedTitle) m_speedTitle->setString(tr("SPEEDHACK", "УСКОРЕНИЕ"));
         if (m_iconsTitle) m_iconsTitle->setString(tr("UNLOCK ICONS", "РАЗБЛОКИРОВКА ИКОНОК"));
         if (m_musicTitle) m_musicTitle->setString(tr("PRACTICE MUSIC", "МУЗЫКА В ПРАКТИКЕ"));
-        fitTitle(m_noclipTitle);
-        fitTitle(m_speedTitle);
-        fitTitle(m_iconsTitle);
-        fitTitle(m_musicTitle);
-        if (m_languageLabel) m_languageLabel->setString(isRussian() ? "RU" : "EN");
-        if (m_noclipAction) m_noclipAction->setString(tr("Toggle", "Переключить"));
-        if (m_iconsAction) m_iconsAction->setString(tr("Toggle", "Переключить"));
-        if (m_musicAction) m_musicAction->setString(tr("Toggle", "Переключить"));
-        if (m_hintLabel) m_hintLabel->setString(tr("Local settings · changes apply instantly",
-                                                   "Локальные настройки · изменения применяются сразу"));
+        if (m_noclipButtonLabel) m_noclipButtonLabel->setString(tr("Change", "Изменить"));
+        if (m_iconsButtonLabel) m_iconsButtonLabel->setString(tr("Change", "Изменить"));
+        if (m_musicButtonLabel) m_musicButtonLabel->setString(tr("Change", "Изменить"));
+        if (m_hintLabel) m_hintLabel->setString(tr("Local settings • changes apply instantly",
+                                                   "Локальные настройки • изменения сразу применяются"));
     }
 
     void onToggleLanguage(CCObject*) {
         Mod::get()->setSavedValue<bool>("ui-russian", !isRussian());
         refreshValues();
     }
+
     void onToggleNoclip(CCObject*) {
         Mod::get()->setSettingValue<bool>("noclip-enabled", !isNoclipEnabled());
         refreshValues();
