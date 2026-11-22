@@ -178,7 +178,9 @@ protected:
         label->setPosition({width * 0.5f, height * 0.5f});
         bg->addChild(label);
         auto item = CCMenuItemSpriteExtra::create(bg, this, callback);
-        item->setPosition(pos);
+        auto popupSize = m_mainLayer->getContentSize();
+        item->setPosition({pos.x - popupSize.width * 0.5f,
+                           pos.y - popupSize.height * 0.5f});
         m_buttonMenu->addChild(item);
         if (outLabel) *outLabel = label;
         return item;
@@ -194,7 +196,9 @@ protected:
         label->setPosition({buttonW * 0.5f, buttonH * 0.5f});
         bg->addChild(label);
         auto item = CCMenuItemSpriteExtra::create(bg, this, callback);
-        item->setPosition(pos);
+        auto popupSize = m_mainLayer->getContentSize();
+        item->setPosition({pos.x - popupSize.width * 0.5f,
+                           pos.y - popupSize.height * 0.5f});
         m_buttonMenu->addChild(item);
         return item;
     }
@@ -246,8 +250,8 @@ protected:
         statusLabel = addText(card, status, {cardW * 0.25f, cardH * 0.62f},
                               10.f, ccc3(190, 205, 255), cardW * 0.44f);
         addActionButton(tr("Toggle", "Переключить"),
-                        {cx + cardW * 0.27f, cy + cardH * 0.08f},
-                        std::min(104.f, cardW * 0.45f), 23.f,
+                        {cx + cardW * 0.18f, cy + cardH * 0.08f},
+                        std::min(82.f, cardW * 0.40f), 22.f,
                         toggle, &actionLabel);
         valueLabel = addText(card, value, {cardW * 0.5f, cardH * 0.22f},
                              14.f, ccc3(208, 188, 255));
@@ -263,8 +267,8 @@ protected:
         m_autoStatus = addText(card, "", {cardW * 0.28f, cardH * 0.61f},
                                11.f, ccc3(190, 205, 255));
         addActionButton(tr("Toggle", "Переключить"),
-                        {cx + cardW * 0.27f, cy + cardH * 0.11f},
-                        std::min(106.f, cardW * 0.43f), 23.f,
+                        {cx + cardW * 0.18f, cy + cardH * 0.10f},
+                        std::min(82.f, cardW * 0.40f), 22.f,
                         menu_selector(GDControlPopup::onToggleAutoClicker),
                         &m_autoAction);
 
@@ -273,8 +277,8 @@ protected:
         m_autoRelease = addText(card, "", {cardW * 0.34f, cardH * 0.12f},
                                 11.f, ccc3(224, 228, 240));
 
-        const float minusX = cx + cardW * 0.68f;
-        const float plusX = cx + cardW * 0.86f;
+        const float minusX = cx + cardW * 0.58f;
+        const float plusX = cx + cardW * 0.78f;
         addSmallButton("-", {minusX, cy - cardH * 0.16f},
                        menu_selector(GDControlPopup::onAutoHoldDown));
         addSmallButton("+", {plusX, cy - cardH * 0.16f},
@@ -310,47 +314,64 @@ protected:
         auto langItem = CCMenuItemSpriteExtra::create(
             langBg, this, menu_selector(GDControlPopup::onToggleLanguage)
         );
-        langItem->setPosition({w * 0.84f, h * 0.91f});
+        langItem->setPosition({w * 0.84f - w * 0.5f,
+                                h * 0.91f - h * 0.5f});
         m_buttonMenu->addChild(langItem);
         m_languageLabel = langText;
 
         const bool landscape = w >= h * 1.2f;
         const int columns = landscape ? 3 : 2;
-        const float marginX = w * 0.025f;
-        const float gapX = w * 0.018f;
+        const float marginX = w * 0.035f;
+        const float gapX = w * 0.025f;
         const float cardW = (w - marginX * 2.f - gapX * (columns - 1)) / columns;
-        const float cardH = landscape ? h * 0.205f : h * 0.16f;
-        m_cardTitleMaxWidth = cardW * 0.9f;
+        const float cardH = landscape ? h * 0.205f : h * 0.155f;
+        m_cardTitleMaxWidth = cardW * 0.88f;
 
-        const float x0 = marginX + cardW * 0.5f;
-        const float x1 = x0 + cardW + gapX;
-        const float x2 = x1 + cardW + gapX;
-        const float row0 = landscape ? h * 0.75f : h * 0.78f;
-        const float row1 = landscape ? h * 0.50f : h * 0.56f;
-        const float row2 = landscape ? h * 0.25f : h * 0.34f;
-        const float row3 = h * 0.13f;
-        const float centerX = w * 0.5f;
+        const float gapY = landscape ? h * 0.045f : h * 0.035f;
+        const float headerBottom = h * 0.82f;
+        const float footerTop = h * 0.09f;
+        const int rows = (7 + columns - 1) / columns;
+        const float usableH = headerBottom - footerTop;
+        const float rowStep = rows > 1
+            ? std::min(cardH + gapY, (usableH - cardH) / (rows - 1))
+            : cardH;
+        const float firstY = headerBottom - cardH * 0.5f;
 
-        buildToggleCard(x0, row0, cardW, cardH, tr("NO-CLIP", "НОУКЛИП"),
+        auto cardCenter = [&](int index) -> CCPoint {
+            const int row = index / columns;
+            const int col = index % columns;
+            const float x = marginX + cardW * 0.5f + col * (cardW + gapX);
+            const float y = firstY - row * rowStep;
+            return {x, y};
+        };
+
+        auto p0 = cardCenter(0);
+        auto p1 = cardCenter(1);
+        auto p2 = cardCenter(2);
+        auto p3 = cardCenter(3);
+        auto p4 = cardCenter(4);
+        auto p5 = cardCenter(5);
+        auto p6 = cardCenter(6);
+
+        buildToggleCard(p0.x, p0.y, cardW, cardH, tr("NO-CLIP", "НОУКЛИП"),
                         m_noclipTitle, m_noclipLabel, m_noclipAction,
                         isNoclipEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"),
                         menu_selector(GDControlPopup::onToggleNoclip));
-        buildValueCard(x1, row0, cardW, cardH, tr("SPEEDHACK", "УСКОРЕНИЕ"),
+        buildValueCard(p1.x, p1.y, cardW, cardH, tr("SPEEDHACK", "УСКОРЕНИЕ"),
                        m_speedTitle, m_speedLabel,
                        fmt::format("{:.2f}x", getSpeedMultiplier()).c_str(),
                        menu_selector(GDControlPopup::onSpeedDown),
                        menu_selector(GDControlPopup::onSpeedUp));
-        buildToggleCard(x2, row0, cardW, cardH, tr("UNLOCK ICONS", "РАЗБЛОКИРОВКА ИКОНОК"),
+        buildToggleCard(p2.x, p2.y, cardW, cardH, tr("UNLOCK ICONS", "РАЗБЛОКИРОВКА ИКОНОК"),
                         m_iconsTitle, m_iconsLabel, m_iconsAction,
                         isUnlockIconsEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"),
                         menu_selector(GDControlPopup::onToggleIcons));
-
-        buildToggleCard(x0, row1, cardW, cardH, tr("PRACTICE MUSIC", "МУЗЫКА В ПРАКТИКЕ"),
+        buildToggleCard(p3.x, p3.y, cardW, cardH, tr("PRACTICE MUSIC", "МУЗЫКА В ПРАКТИКЕ"),
                         m_musicTitle, m_musicLabel, m_musicAction,
                         isPracticeMusicEnabled() ? tr("Unlocked", "Разблокировано") : tr("Locked", "Заблокировано"),
                         menu_selector(GDControlPopup::onTogglePracticeMusic));
-        buildAutoClickerCard(x1, row1, cardW, cardH);
-        buildRateCard(x2, row1, cardW, cardH,
+        buildAutoClickerCard(p4.x, p4.y, cardW, cardH);
+        buildRateCard(p5.x, p5.y, cardW, cardH,
                       tr("TPS BYPASS", "ОБХОД TPS"),
                       m_tpsTitle, m_tpsStatus, m_tpsValue, m_tpsAction,
                       isTPSBypassEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"),
@@ -358,8 +379,7 @@ protected:
                       menu_selector(GDControlPopup::onToggleTPS),
                       menu_selector(GDControlPopup::onTPSDown),
                       menu_selector(GDControlPopup::onTPSUp));
-
-        buildRateCard(centerX, landscape ? row2 : row3, cardW, cardH,
+        buildRateCard(p6.x, p6.y, cardW, cardH,
                       tr("FPS BYPASS", "ОБХОД FPS"),
                       m_fpsTitle, m_fpsStatus, m_fpsValue, m_fpsAction,
                       isFPSBypassEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"),
@@ -371,7 +391,7 @@ protected:
         m_hintLabel = addText(m_mainLayer,
             tr("Local settings · changes apply instantly",
                "Локальные настройки · изменения применяются сразу"),
-            {w * 0.5f, landscape ? h * 0.045f : h * 0.025f},
+            {w * 0.5f, h * 0.035f},
             10.f, ccc3(137, 149, 171), w * 0.9f);
 
         refreshValues();
