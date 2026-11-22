@@ -469,19 +469,18 @@ protected:
         addActionButton(autoRow, tr("Toggle", "Переключить"),
             {innerW - 62.f, rowH * 0.72f}, 100.f, 23.f,
             [this]() { onToggleAutoClicker(nullptr); }, &m_autoAction);
-        const float controlY1 = rowH * 0.31f;
-        const float controlY2 = rowH * 0.08f;
-        m_autoHold = addText(autoRow, "", {innerW * 0.40f, controlY1},
+        const float autoControlY = rowH * 0.22f;
+        m_autoHold = addText(autoRow, "", {innerW * 0.40f, autoControlY},
             9.f, ccc3(224, 228, 240));
-        m_autoRelease = addText(autoRow, "", {innerW * 0.40f, controlY2},
+        m_autoRelease = addText(autoRow, "", {innerW * 0.68f, autoControlY},
             9.f, ccc3(224, 228, 240));
-        addSmallButton(autoRow, "-", {innerW - 105.f, controlY1},
+        addSmallButton(autoRow, "-", {innerW * 0.56f, autoControlY},
             [this]() { onAutoHoldDown(nullptr); });
-        addSmallButton(autoRow, "+", {innerW - 65.f, controlY1},
+        addSmallButton(autoRow, "+", {innerW * 0.62f, autoControlY},
             [this]() { onAutoHoldUp(nullptr); });
-        addSmallButton(autoRow, "-", {innerW - 105.f, controlY2},
+        addSmallButton(autoRow, "-", {innerW * 0.84f, autoControlY},
             [this]() { onAutoReleaseDown(nullptr); });
-        addSmallButton(autoRow, "+", {innerW - 65.f, controlY2},
+        addSmallButton(autoRow, "+", {innerW * 0.90f, autoControlY},
             [this]() { onAutoReleaseUp(nullptr); });
 
         // UNLOCKS page
