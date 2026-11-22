@@ -55,6 +55,7 @@ protected:
     CCLabelTTF* m_noclipButtonLabel = nullptr;
     CCLabelTTF* m_iconsButtonLabel = nullptr;
     CCLabelTTF* m_musicButtonLabel = nullptr;
+    CCLabelTTF* m_speedButtonLabel = nullptr;
     CCLabelTTF* m_hintLabel = nullptr;
 
     bool isRussian() {
