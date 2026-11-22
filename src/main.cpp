@@ -89,7 +89,7 @@ protected:
         return surface;
     }
 
-    geode::ui::Button* makeButton(CCNode* parent, const char* text, CCPoint pos,
+    geode::Button* makeButton(CCNode* parent, const char* text, CCPoint pos,
                                   CCSize size, std::function<void()> callback,
                                   bool primary = false, CCLabelTTF** outLabel = nullptr) {
         auto bg = makeSurface(size, primary ? ccc3(75, 94, 166) : ccc3(58, 62, 76));
@@ -99,11 +99,11 @@ protected:
         bg->addChild(label);
         if (outLabel) *outLabel = label;
 
-        auto button = geode::ui::Button::createWithNode(bg, [callback](geode::ui::Button*) {
+        auto button = geode::Button::createWithNode(bg, [callback](geode::Button*) {
             callback();
         });
         button->setPosition(pos);
-        button->setAnimationType(geode::ui::Button::AnimationType::Scale);
+        button->setAnimationType(geode::Button::AnimationType::Scale);
         button->setScaleMultiplier(0.97f);
         parent->addChild(button, 5);
         return button;
@@ -170,7 +170,7 @@ protected:
         langText->setColor(ccc3(224, 222, 236));
         langText->setPosition({33.f, 16.f});
         langBg->addChild(langText);
-        auto langButton = geode::ui::Button::createWithNode(langBg, [this](geode::ui::Button*) {
+        auto langButton = geode::Button::createWithNode(langBg, [this](geode::Button*) {
             onToggleLanguage(nullptr);
         });
         langButton->setPosition({w * 0.87f, h * 0.91f});
