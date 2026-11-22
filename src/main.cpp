@@ -145,11 +145,12 @@ protected:
     CCLabelTTF* m_fpsValue = nullptr;
     CCLabelTTF* m_fpsAction = nullptr;
     CCLabelTTF* m_instantCompleteTitle = nullptr;
+    CCLabelTTF* m_achievementCountLabel = nullptr;
 
     float m_cardTitleMaxWidth = 0.f;
-    CCNode* m_pages[3] = { nullptr, nullptr, nullptr };
-    CCLabelTTF* m_tabLabels[3] = { nullptr, nullptr, nullptr };
-    geode::NineSlice* m_tabBgs[3] = { nullptr, nullptr, nullptr };
+    CCNode* m_pages[4] = { nullptr, nullptr, nullptr, nullptr };
+    CCLabelTTF* m_tabLabels[4] = { nullptr, nullptr, nullptr, nullptr };
+    geode::NineSlice* m_tabBgs[4] = { nullptr, nullptr, nullptr, nullptr };
     CCLabelTTF* m_noclipCheck = nullptr;
     CCLabelTTF* m_iconsCheck = nullptr;
     CCLabelTTF* m_musicCheck = nullptr;
@@ -337,9 +338,9 @@ protected:
     }
 
     void setPage(int index) {
-        if (index < 0 || index >= 3) return;
+        if (index < 0 || index >= 4) return;
         m_activePage = index;
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 4; ++i) {
             if (m_pages[i]) m_pages[i]->setVisible(i == index);
             if (m_tabLabels[i]) m_tabLabels[i]->setColor(i == index
                 ? ccc3(245, 247, 252) : ccc3(170, 179, 195));
@@ -412,9 +413,9 @@ protected:
         contentBG->setPosition({contentX, contentTop});
         m_mainLayer->addChild(contentBG, 1);
 
-        const char* navEn[3] = {"PLAYER", "UNLOCKS", "BYPASS"};
-        const char* navRu[3] = {"ИГРОК", "РАЗБЛОКИРОВКИ", "ОБХОДЫ"};
-        for (int i = 0; i < 3; ++i) {
+        const char* navEn[4] = {"PLAYER", "UNLOCKS", "BYPASS", "ACHIEVEMENTS"};
+        const char* navRu[4] = {"ИГРОК", "РАЗБЛОКИРОВКИ", "ОБХОДЫ", "ДОСТИЖЕНИЯ"};
+        for (int i = 0; i < 4; ++i) {
             auto tabNode = CCNode::create();
             tabNode->setContentSize({120.f, 28.f});
             auto tabBG = geode::NineSlice::create("square02b_001.png", {0.f, 0.f, 80.f, 80.f});
@@ -437,7 +438,7 @@ protected:
             m_tabBgs[i] = tabBG;
         }
 
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 4; ++i) {
             m_pages[i] = CCNode::create();
             m_pages[i]->setContentSize({contentW, contentH});
             m_pages[i]->setAnchorPoint({0.f, 1.f});
@@ -550,6 +551,28 @@ protected:
         addValueControls(fpsRow, m_fpsValue, fmt::format("{} FPS", getFPSBypassValue()).c_str(),
             [this]() { onFPSDown(nullptr); }, [this]() { onFPSUp(nullptr); }, 260.f);
 
+        auto achievementTitle = addText(m_pages[3],
+            tr("ACHIEVEMENT MANAGER", "МЕНЕДЖЕР ДОСТИЖЕНИЙ"),
+            {contentW * 0.5f, contentH - 42.f}, 17.f, ccc3(238, 241, 248), contentW - 24.f);
+        auto achievementInfo = addText(m_pages[3],
+            tr("Browse the game's native achievement catalogue.",
+               "Просмотр встроенного списка достижений игры."),
+            {contentW * 0.5f, contentH - 72.f}, 10.f, ccc3(174, 184, 201), contentW - 24.f);
+        auto achievementManager = AchievementManager::sharedState();
+        const auto totalAchievements = achievementManager && achievementManager->getAllAchievements()
+            ? achievementManager->getAllAchievements()->count() : 0;
+        m_achievementCountLabel = addText(m_pages[3],
+            fmt::format("{} {}", totalAchievements,
+                tr("achievements in game", "достижений в игре")).c_str(),
+            {contentW * 0.5f, contentH - 112.f}, 13.f, ccc3(202, 187, 255), contentW - 24.f);
+        addActionButton(m_pages[3], tr("Open achievements", "Открыть достижения"),
+            {contentW * 0.5f, contentH - 160.f}, 190.f, 30.f,
+            [this]() { onOpenAchievements(nullptr); });
+        addText(m_pages[3],
+            tr("Progress and rewards are handled by Geometry Dash.",
+               "Прогресс и награды обрабатывает сама Geometry Dash."),
+            {contentW * 0.5f, contentH - 202.f}, 9.f, ccc3(137, 149, 171), contentW - 24.f);
+
         m_hintLabel = addText(m_mainLayer,
             tr("Local settings · changes apply instantly",
                "Локальные настройки · изменения применяются сразу"),
@@ -566,6 +589,7 @@ protected:
         if (m_tabLabels[0]) m_tabLabels[0]->setString(tr("PLAYER", "ИГРОК"));
         if (m_tabLabels[1]) m_tabLabels[1]->setString(tr("UNLOCKS", "РАЗБЛОКИРОВКИ"));
         if (m_tabLabels[2]) m_tabLabels[2]->setString(tr("BYPASS", "ОБХОДЫ"));
+        if (m_tabLabels[3]) m_tabLabels[3]->setString(tr("ACHIEVEMENTS", "ДОСТИЖЕНИЯ"));
 
         if (m_noclipTitle) m_noclipTitle->setString(tr("No-Clip", "Ноуклип"));
         if (m_speedTitle) m_speedTitle->setString(tr("Speedhack", "Ускорение"));
@@ -595,6 +619,20 @@ protected:
         if (m_hintLabel) m_hintLabel->setString(tr(
             "Local settings · changes apply instantly",
             "Локальные настройки · изменения применяются сразу"));
+    }
+
+    void onOpenAchievements(CCObject*) {
+        auto layer = AchievementsLayer::create();
+        auto scene = CCDirector::sharedDirector()->getRunningScene();
+        if (!layer || !scene) {
+            Notification::create(
+                tr("Could not open achievements", "Не удалось открыть достижения"),
+                NotificationIcon::Error, 2.f
+            )->show();
+            return;
+        }
+        scene->addChild(layer, 100);
+        layer->showLayer(false);
     }
 
     void onInstantComplete(CCObject*) {
