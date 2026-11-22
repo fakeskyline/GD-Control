@@ -1,5 +1,6 @@
 #include <Geode/Geode.hpp>
 #include <Geode/ui/Popup.hpp>
+#include <Geode/modify/GJBaseGameLayer.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/CCScheduler.hpp>
@@ -242,14 +243,14 @@ protected:
         auto card = addCard(cx, cy, cardW, cardH);
         titleLabel = addText(card, title, {cardW * 0.5f, cardH * 0.82f},
                              16.f, ccc3(238, 241, 248), cardW * 0.9f);
-        statusLabel = addText(card, status, {cardW * 0.5f, cardH * 0.62f},
-                              11.f, ccc3(190, 205, 255));
+        statusLabel = addText(card, status, {cardW * 0.25f, cardH * 0.62f},
+                              10.f, ccc3(190, 205, 255), cardW * 0.44f);
         addActionButton(tr("Toggle", "Переключить"),
-                        {cx, cy + cardH * 0.08f},
-                        std::min(112.f, cardW * 0.48f), 23.f,
+                        {cx + cardW * 0.27f, cy + cardH * 0.08f},
+                        std::min(104.f, cardW * 0.45f), 23.f,
                         toggle, &actionLabel);
         valueLabel = addText(card, value, {cardW * 0.5f, cardH * 0.22f},
-                             15.f, ccc3(208, 188, 255));
+                             14.f, ccc3(208, 188, 255));
         addSmallButton("-", {cx - cardW * 0.28f, cy - cardH * 0.27f}, down);
         addSmallButton("+", {cx + cardW * 0.28f, cy - cardH * 0.27f}, up);
     }
