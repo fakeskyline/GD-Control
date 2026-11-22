@@ -85,7 +85,7 @@ protected:
 
     geode::NineSlice* makeSurface(CCSize size, ccColor3B color) {
         auto surface = geode::NineSlice::create(
-            "md3_round.png"_spr, {}, {24.f, 24.f, 24.f, 24.f}
+            "md3_round.png"_spr, {}, {16.f, 16.f, 16.f, 16.f}
         );
         surface->setContentSize(size);
         surface->setColor(color);
@@ -223,10 +223,23 @@ protected:
         if (m_speedLabel) m_speedLabel->setString(fmt::format("{:.2f}x", getSpeedMultiplier()).c_str());
         if (m_iconsLabel) m_iconsLabel->setString(isUnlockIconsEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"));
         if (m_practiceMusicLabel) m_practiceMusicLabel->setString(isPracticeMusicEnabled() ? tr("Unlocked", "Разблокировано") : tr("Locked", "Заблокировано"));
-        if (m_noclipTitle) { m_noclipTitle->setString(tr("NO-CLIP", "НОУКЛИП")); m_noclipTitle->setScale(std::min(1.f, m_cardTitleMaxWidth / m_noclipTitle->getContentSize().width)); }
-        if (m_speedTitle) { m_speedTitle->setString(tr("SPEEDHACK", "УСКОРЕНИЕ")); m_speedTitle->setScale(std::min(1.f, m_cardTitleMaxWidth / m_speedTitle->getContentSize().width)); }
-        if (m_iconsTitle) { m_iconsTitle->setString(tr("UNLOCK ICONS", "РАЗБЛОКИРОВКА ИКОНОК")); m_iconsTitle->setScale(std::min(1.f, m_cardTitleMaxWidth / m_iconsTitle->getContentSize().width)); }
-        if (m_musicTitle) { m_musicTitle->setString(tr("PRACTICE MUSIC", "МУЗЫКА В ПРАКТИКЕ")); m_musicTitle->setScale(std::min(1.f, m_cardTitleMaxWidth / m_musicTitle->getContentSize().width)); }
+        auto fitTitle = [this](CCLabelBMFont* label) {
+            if (!label) return;
+            constexpr float baseScale = 18.f / 80.f;
+            const float renderedWidth = label->getContentSize().width * baseScale;
+            const float fit = renderedWidth > m_cardTitleMaxWidth
+                ? m_cardTitleMaxWidth / renderedWidth
+                : 1.f;
+            label->setScale(baseScale * fit);
+        };
+        if (m_noclipTitle) m_noclipTitle->setString(tr("NO-CLIP", "НОУКЛИП"));
+        if (m_speedTitle) m_speedTitle->setString(tr("SPEEDHACK", "УСКОРЕНИЕ"));
+        if (m_iconsTitle) m_iconsTitle->setString(tr("UNLOCK ICONS", "РАЗБЛОКИРОВКА ИКОНОК"));
+        if (m_musicTitle) m_musicTitle->setString(tr("PRACTICE MUSIC", "МУЗЫКА В ПРАКТИКЕ"));
+        fitTitle(m_noclipTitle);
+        fitTitle(m_speedTitle);
+        fitTitle(m_iconsTitle);
+        fitTitle(m_musicTitle);
         if (m_languageLabel) m_languageLabel->setString(isRussian() ? "RU" : "EN");
         if (m_noclipAction) m_noclipAction->setString(tr("Toggle", "Переключить"));
         if (m_iconsAction) m_iconsAction->setString(tr("Toggle", "Переключить"));
