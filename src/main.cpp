@@ -172,11 +172,14 @@ protected:
                                            float width, float height,
                                            SEL_MenuHandler callback,
                                            CCLabelTTF** outLabel = nullptr) {
-        auto bg = CCLayerColor::create(ccc4(65, 105, 220, 255), width, height);
+        auto bg = ButtonSprite::create(" ", "bigFont.fnt", "GJ_button_01.png", 0.65f);
+        if (!bg) return nullptr;
+        bg->setScaleX(width / bg->getContentSize().width);
+        bg->setScaleY(height / bg->getContentSize().height);
         auto label = CCLabelTTF::create(text, "Arial", std::min(13.f, height * 0.48f));
         label->setColor(ccc3(255, 255, 255));
-        label->setPosition({width * 0.5f, height * 0.5f});
-        bg->addChild(label);
+        label->setPosition(bg->getContentSize() * 0.5f);
+        bg->addChild(label, 5);
         auto item = CCMenuItemSpriteExtra::create(bg, this, callback);
         auto popupSize = m_mainLayer->getContentSize();
         item->setPosition({pos.x - popupSize.width * 0.5f,
@@ -188,13 +191,16 @@ protected:
 
     CCMenuItemSpriteExtra* addSmallButton(const char* text, CCPoint pos,
                                           SEL_MenuHandler callback) {
-        constexpr float buttonW = 27.f;
-        constexpr float buttonH = 24.f;
-        auto bg = CCLayerColor::create(ccc4(65, 105, 220, 255), buttonW, buttonH);
+        constexpr float buttonW = 30.f;
+        constexpr float buttonH = 27.f;
+        auto bg = ButtonSprite::create(" ", "bigFont.fnt", "GJ_button_02.png", 0.65f);
+        if (!bg) return nullptr;
+        bg->setScaleX(buttonW / bg->getContentSize().width);
+        bg->setScaleY(buttonH / bg->getContentSize().height);
         auto label = CCLabelTTF::create(text, "Arial", 15.f);
         label->setColor(ccc3(255, 255, 255));
-        label->setPosition({buttonW * 0.5f, buttonH * 0.5f});
-        bg->addChild(label);
+        label->setPosition(bg->getContentSize() * 0.5f);
+        bg->addChild(label, 5);
         auto item = CCMenuItemSpriteExtra::create(bg, this, callback);
         auto popupSize = m_mainLayer->getContentSize();
         item->setPosition({pos.x - popupSize.width * 0.5f,
