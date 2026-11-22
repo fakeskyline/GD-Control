@@ -1,7 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/ui/Popup.hpp>
 #include <Geode/ui/Button.hpp>
-#include <Geode/mapping/CCScale9Sprite.hpp>
+#include <Geode/ui/NineSlice.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/CCScheduler.hpp>
@@ -45,19 +45,19 @@ namespace {
 
 class GDControlPopup : public Popup {
 protected:
-    CCLabelTTF* m_noclipLabel = nullptr;
-    CCLabelTTF* m_speedLabel = nullptr;
-    CCLabelTTF* m_iconsLabel = nullptr;
-    CCLabelTTF* m_practiceMusicLabel = nullptr;
-    CCLabelTTF* m_languageLabel = nullptr;
-    CCLabelTTF* m_noclipTitle = nullptr;
-    CCLabelTTF* m_speedTitle = nullptr;
-    CCLabelTTF* m_iconsTitle = nullptr;
-    CCLabelTTF* m_musicTitle = nullptr;
-    CCLabelTTF* m_noclipAction = nullptr;
-    CCLabelTTF* m_iconsAction = nullptr;
-    CCLabelTTF* m_musicAction = nullptr;
-    CCLabelTTF* m_hintLabel = nullptr;
+    CCLabelBMFont* m_noclipLabel = nullptr;
+    CCLabelBMFont* m_speedLabel = nullptr;
+    CCLabelBMFont* m_iconsLabel = nullptr;
+    CCLabelBMFont* m_practiceMusicLabel = nullptr;
+    CCLabelBMFont* m_languageLabel = nullptr;
+    CCLabelBMFont* m_noclipTitle = nullptr;
+    CCLabelBMFont* m_speedTitle = nullptr;
+    CCLabelBMFont* m_iconsTitle = nullptr;
+    CCLabelBMFont* m_musicTitle = nullptr;
+    CCLabelBMFont* m_noclipAction = nullptr;
+    CCLabelBMFont* m_iconsAction = nullptr;
+    CCLabelBMFont* m_musicAction = nullptr;
+    CCLabelBMFont* m_hintLabel = nullptr;
     float m_cardTitleMaxWidth = 0.f;
 
     bool isRussian() {
@@ -68,21 +68,25 @@ protected:
         return isRussian() ? ru : en;
     }
 
-    CCLabelTTF* addText(CCNode* parent, const char* text, CCPoint pos,
+    CCLabelBMFont* addText(CCNode* parent, const char* text, CCPoint pos,
                         float fontSize, ccColor3B color, float maxWidth = 0.f) {
-        auto label = CCLabelTTF::create(text, "Roboto-Medium", fontSize);
+        auto label = CCLabelBMFont::create(text, "GoogleSans.fnt"_spr);
+        const float baseScale = fontSize / 80.f;
+        label->setScale(baseScale);
         label->setColor(color);
         label->setAnchorPoint({0.5f, 0.5f});
-        if (maxWidth > 0.f && label->getContentSize().width > maxWidth) {
-            label->setScale(maxWidth / label->getContentSize().width);
+        if (maxWidth > 0.f && label->getContentSize().width * baseScale > maxWidth) {
+            label->setScale(baseScale * maxWidth / label->getContentSize().width);
         }
         label->setPosition(pos);
         parent->addChild(label);
         return label;
     }
 
-    CCScale9Sprite* makeSurface(CCSize size, ccColor3B color) {
-        auto surface = CCScale9Sprite::create("square02_small.png");
+    geode::NineSlice* makeSurface(CCSize size, ccColor3B color) {
+        auto surface = geode::NineSlice::create(
+            "md3_round.png"_spr, {}, {24.f, 24.f, 24.f, 24.f}
+        );
         surface->setContentSize(size);
         surface->setColor(color);
         surface->setOpacity(255);
@@ -91,10 +95,11 @@ protected:
 
     geode::Button* makeButton(CCNode* parent, const char* text, CCPoint pos,
                                   CCSize size, std::function<void()> callback,
-                                  bool primary = false, CCLabelTTF** outLabel = nullptr) {
+                                  bool primary = false, CCLabelBMFont** outLabel = nullptr) {
         auto bg = makeSurface(size, primary ? ccc3(75, 94, 166) : ccc3(58, 62, 76));
-        auto label = CCLabelTTF::create(text, "Roboto-Medium", 15.f);
-        label->setColor(primary ? ccc3(242, 240, 255) : ccc3(220, 222, 235));
+        auto label = CCLabelBMFont::create(text, "GoogleSans.fnt"_spr);
+        label->setScale(15.f / 80.f);
+        label->setColor(primary ? ccc3(30, 39, 64) : ccc3(220, 222, 235));
         label->setPosition({size.width * 0.5f, size.height * 0.5f});
         bg->addChild(label);
         if (outLabel) *outLabel = label;
@@ -123,8 +128,8 @@ protected:
 
     void addToggleCard(float centerX, float centerY, float cardW, float cardH,
                        const char* title, const char* status, bool enabled,
-                       CCLabelTTF*& titleLabel, CCLabelTTF*& statusLabel,
-                       CCLabelTTF*& actionLabel, std::function<void()> callback) {
+                       CCLabelBMFont*& titleLabel, CCLabelBMFont*& statusLabel,
+                       CCLabelBMFont*& actionLabel, std::function<void()> callback) {
         auto card = createCard(centerX, centerY, cardW, cardH);
         titleLabel = addText(card, title, {cardW * 0.5f, cardH * 0.76f},
                              18.f, ccc3(229, 226, 238), cardW * 0.88f);
@@ -159,14 +164,15 @@ protected:
         const float w = size.width;
         const float h = size.height;
 
-        auto surface = CCLayerColor::create(ccc4(27, 28, 34, 255), w, h);
-        surface->setPosition({0.f, 0.f});
+        auto surface = makeSurface({w, h}, ccc3(27, 28, 34));
+        surface->setPosition({w * 0.5f, h * 0.5f});
         m_mainLayer->addChild(surface, 0);
 
         addText(m_mainLayer, "GD CONTROL", {w * 0.5f, h * 0.91f},
                 25.f, ccc3(242, 240, 248));
         auto langBg = makeSurface({66.f, 32.f}, ccc3(54, 58, 72));
-        auto langText = CCLabelTTF::create("EN", "Roboto-Medium", 13.f);
+        auto langText = CCLabelBMFont::create("EN", "GoogleSans.fnt"_spr);
+        langText->setScale(13.f / 80.f);
         langText->setColor(ccc3(224, 222, 236));
         langText->setPosition({33.f, 16.f});
         langBg->addChild(langText);
