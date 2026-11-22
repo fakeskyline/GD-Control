@@ -5,6 +5,7 @@
 #include <Geode/modify/GJBaseGameLayer.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
+#include <Geode/modify/LevelEditorLayer.hpp>
 #include <Geode/modify/CCScheduler.hpp>
 #include <Geode/modify/GameManager.hpp>
 #include <Geode/modify/GameStatsManager.hpp>
@@ -169,7 +170,8 @@ protected:
         if (!card) return nullptr;
         card->setContentSize({cardW, cardH});
         card->setColor(ccc3(34, 78, 190));
-        card->setPosition({centerX - cardW * 0.5f, centerY - cardH * 0.5f});
+        card->setAnchorPoint({0.5f, 0.5f});
+        card->setPosition({centerX, centerY});
         m_mainLayer->addChild(card, 2);
         return card;
     }
@@ -292,30 +294,30 @@ protected:
     void buildAutoClickerCard(float cx, float cy, float cardW, float cardH) {
         auto card = addCard(cx, cy, cardW, cardH);
         m_autoTitle = addText(card, tr("AUTO CLICKER", "АВТОКЛИКЕР"),
-                              {cardW * 0.5f, cardH * 0.83f},
+                              {cardW * 0.5f, cardH * 0.84f},
                               16.f, ccc3(238, 241, 248), cardW * 0.9f);
-        m_autoStatus = addText(card, "", {cardW * 0.5f, cardH * 0.63f},
+        m_autoStatus = addText(card, "", {cardW * 0.5f, cardH * 0.65f},
                                11.f, ccc3(190, 205, 255));
         addActionButton(card, tr("Toggle", "Переключить"),
-                        {cardW * 0.5f, cardH * 0.45f},
-                        std::min(98.f, cardW * 0.44f), 23.f,
+                        {cardW * 0.5f, cardH * 0.49f},
+                        std::min(96.f, cardW * 0.42f), 22.f,
                         [this]() { onToggleAutoClicker(nullptr); },
                         &m_autoAction);
 
-        m_autoHold = addText(card, "", {cardW * 0.30f, cardH * 0.25f},
-                             11.f, ccc3(224, 228, 240));
-        m_autoRelease = addText(card, "", {cardW * 0.30f, cardH * 0.10f},
-                                11.f, ccc3(224, 228, 240));
+        m_autoHold = addText(card, "", {cardW * 0.32f, cardH * 0.29f},
+                             10.f, ccc3(224, 228, 240));
+        m_autoRelease = addText(card, "", {cardW * 0.32f, cardH * 0.08f},
+                                10.f, ccc3(224, 228, 240));
 
-        const float minusX = cardW * 0.66f;
-        const float plusX = cardW * 0.84f;
-        addSmallButton(card, "-", {minusX, cardH * 0.25f},
+        const float minusX = cardW * 0.70f;
+        const float plusX = cardW * 0.87f;
+        addSmallButton(card, "-", {minusX, cardH * 0.29f},
                        [this]() { onAutoHoldDown(nullptr); });
-        addSmallButton(card, "+", {plusX, cardH * 0.25f},
+        addSmallButton(card, "+", {plusX, cardH * 0.29f},
                        [this]() { onAutoHoldUp(nullptr); });
-        addSmallButton(card, "-", {minusX, cardH * 0.10f},
+        addSmallButton(card, "-", {minusX, cardH * 0.08f},
                        [this]() { onAutoReleaseDown(nullptr); });
-        addSmallButton(card, "+", {plusX, cardH * 0.10f},
+        addSmallButton(card, "+", {plusX, cardH * 0.08f},
                        [this]() { onAutoReleaseUp(nullptr); });
     }
 
@@ -674,6 +676,29 @@ public:
     }
 };
 
+static void attachFloatingButton(CCNode* parent) {
+    if (!parent || parent->getChildByID("gd-control-floating-button"_spr)) return;
+
+    auto button = GDFloatingButton::create();
+    if (!button) return;
+
+    auto win = CCDirector::sharedDirector()->getWinSize();
+    auto size = parent->getContentSize();
+    const float width = size.width > 0.f ? size.width : win.width;
+    const float height = size.height > 0.f ? size.height : win.height;
+    const float halfW = button->getContentSize().width * 0.5f;
+    const float halfH = button->getContentSize().height * 0.5f;
+
+    const float x = Mod::get()->getSavedValue<float>("floating-button-x", width - 76.f);
+    const float y = Mod::get()->getSavedValue<float>("floating-button-y", 48.f);
+    button->setPosition({
+        std::clamp(x, halfW, width - halfW),
+        std::clamp(y, halfH, height - halfH)
+    });
+    button->setID("gd-control-floating-button"_spr);
+    parent->addChild(button, 10000);
+}
+
 class $modify(GDControlMenuLayer, MenuLayer) {
     bool init() {
         if (!MenuLayer::init()) {
@@ -682,26 +707,19 @@ class $modify(GDControlMenuLayer, MenuLayer) {
 
         if (isFPSBypassEnabled()) applyFPSBypass();
 
-        auto button = GDFloatingButton::create();
-        if (button) {
-            auto win = CCDirector::sharedDirector()->getWinSize();
-            auto x = Mod::get()->getSavedValue<float>("floating-button-x", win.width - 76.f);
-            auto y = Mod::get()->getSavedValue<float>("floating-button-y", 48.f);
-
-            button->setPosition({
-                std::clamp(x, button->getContentSize().width / 2.f, win.width - button->getContentSize().width / 2.f),
-                std::clamp(y, button->getContentSize().height / 2.f, win.height - button->getContentSize().height / 2.f)
-            });
-
-            button->setID("gd-control-floating-button"_spr);
-            this->addChild(button, 1000);
-        }
+        attachFloatingButton(this);
 
         return true;
     }
 };
 
 class $modify(GDControlPlayLayer, PlayLayer) {
+    bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
+        if (!PlayLayer::init(level, useReplay, dontCreateObjects)) return false;
+        attachFloatingButton(this);
+        return true;
+    }
+
     void pauseGame(bool paused) {
         if (paused) stopAutoClicker(this);
         PlayLayer::pauseGame(paused);
@@ -862,6 +880,14 @@ class $modify(GDControlTPSBypass, GJBaseGameLayer) {
         const double adjustedDelta = steps * fixedDelta;
         m_extraDelta = accumulated - adjustedDelta;
         return adjustedDelta;
+    }
+};
+
+class $modify(GDControlEditorLayer, LevelEditorLayer) {
+    bool init(GJGameLevel* level, bool noUI) {
+        if (!LevelEditorLayer::init(level, noUI)) return false;
+        attachFloatingButton(this);
+        return true;
     }
 };
 
