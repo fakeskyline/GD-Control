@@ -148,7 +148,7 @@ protected:
     float m_cardTitleMaxWidth = 0.f;
     CCNode* m_pages[3] = { nullptr, nullptr, nullptr };
     CCLabelTTF* m_tabLabels[3] = { nullptr, nullptr, nullptr };
-    CCNode* m_tabBgs[3] = { nullptr, nullptr, nullptr };
+    geode::NineSlice* m_tabBgs[3] = { nullptr, nullptr, nullptr };
     CCLabelTTF* m_noclipCheck = nullptr;
     CCLabelTTF* m_iconsCheck = nullptr;
     CCLabelTTF* m_musicCheck = nullptr;
@@ -705,11 +705,11 @@ protected:
 
     void onEnter() override {
         CCMenu::onEnter();
-        CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(this, -1000, true);
+        CCDirector::sharedDirector()->getTouchDispatcher()->addTargetedDelegate(static_cast<cocos2d::CCTargetedTouchDelegate*>(this), -1000, true);
     }
 
     void onExit() override {
-        CCDirector::sharedDirector()->getTouchDispatcher()->removeDelegate(this);
+        CCDirector::sharedDirector()->getTouchDispatcher()->removeDelegate(static_cast<cocos2d::CCTargetedTouchDelegate*>(this));
         CCMenu::onExit();
     }
 

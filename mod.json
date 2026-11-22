@@ -5,7 +5,7 @@
   },
   "id": "fakeskyline.gdcontrol",
   "name": "GD Control",
-  "version": "v0.2.1",
+  "version": "v0.2.2",
   "developer": "fakeskyline",
   "description": "A mobile-friendly Geometry Dash mod menu with No-Clip, Speedhack, local icon unlock, Practice Music Sync, Auto Clicker, TPS Bypass and FPS Bypass.",
   "repository": "https://github.com/fakeskyline/GD-Control",
