@@ -129,6 +129,8 @@ protected:
     CCLabelTTF* m_musicAction = nullptr;
 
     CCLabelTTF* m_autoTitle = nullptr;
+    CCLabelTTF* m_autoHoldTitle = nullptr;
+    CCLabelTTF* m_autoReleaseTitle = nullptr;
     CCLabelTTF* m_autoStatus = nullptr;
     CCLabelTTF* m_autoAction = nullptr;
     CCLabelTTF* m_autoHold = nullptr;
@@ -512,11 +514,11 @@ protected:
             m_autoTitle, m_autoCheck, isAutoClickerEnabled(),
             [this]() { onToggleAutoClicker(nullptr); });
 
-        auto holdRow = addPlainRow(m_pages[0], 3, tr("Press", "Нажатие"), m_autoTitle);
+        auto holdRow = addPlainRow(m_pages[0], 3, tr("Press", "Нажатие"), m_autoHoldTitle);
         addValueControls(holdRow, m_autoHold, fmt::format("{}", getAutoClickerHold()).c_str(),
             [this]() { onAutoHoldDown(nullptr); }, [this]() { onAutoHoldUp(nullptr); }, 260.f);
 
-        auto releaseRow = addPlainRow(m_pages[0], 4, tr("Release", "Отпускание"), m_autoTitle);
+        auto releaseRow = addPlainRow(m_pages[0], 4, tr("Release", "Отпускание"), m_autoReleaseTitle);
         addValueControls(releaseRow, m_autoRelease, fmt::format("{}", getAutoClickerRelease()).c_str(),
             [this]() { onAutoReleaseDown(nullptr); }, [this]() { onAutoReleaseUp(nullptr); }, 260.f);
 
@@ -561,6 +563,8 @@ protected:
         if (m_noclipTitle) m_noclipTitle->setString(tr("No-Clip", "Ноуклип"));
         if (m_speedTitle) m_speedTitle->setString(tr("Speedhack", "Ускорение"));
         if (m_autoTitle) m_autoTitle->setString(tr("Auto Clicker", "Автокликер"));
+        if (m_autoHoldTitle) m_autoHoldTitle->setString(tr("Press", "Нажатие"));
+        if (m_autoReleaseTitle) m_autoReleaseTitle->setString(tr("Release", "Отпускание"));
         if (m_iconsTitle) m_iconsTitle->setString(tr("Unlock Icons", "Разблокировка иконок"));
         if (m_musicTitle) m_musicTitle->setString(tr("Practice Music", "Музыка в практике"));
         if (m_tpsTitle) m_tpsTitle->setString(tr("TPS Bypass", "Обход TPS"));
