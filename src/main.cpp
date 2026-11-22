@@ -1035,7 +1035,7 @@ class $modify(GDControlGameManager, GameManager) {
 };
 
 $on_mod(Loaded) {
-    log::info("GD Control v0.2.6 loaded for Geometry Dash 2.2091.");
+    log::info("GD Control v0.2.8 loaded for Geometry Dash 2.2091.");
     installFloatingButton();
     if (isFPSBypassEnabled()) applyFPSBypass();
 }

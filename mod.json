@@ -5,9 +5,9 @@
   },
   "id": "fakeskyline.gdcontrol",
   "name": "GD Control",
-  "version": "v0.2.7",
+  "version": "v0.2.8",
   "developer": "fakeskyline",
-  "description": "A mobile-friendly Geometry Dash mod menu with gameplay, editor and utility features including Startpos Switcher.",
+  "description": "A mobile-friendly Geometry Dash mod menu with gameplay, editor and utility features including Smart Startpos and Auto Kill.",
   "repository": "https://github.com/fakeskyline/GD-Control",
   "tags": [
     "gameplay",
@@ -68,6 +68,27 @@
       "name": "Include level start",
       "description": "Include the beginning of the level in the start position cycle.",
       "default": true
+    },
+    "smart-startpos-enabled": {
+      "name": "Smart Start Pos",
+      "description": "Automatically configures each Start Position using the nearest preceding dual, mode, mini and speed portals.",
+      "type": "bool",
+      "default": false
+    },
+    "auto-kill-enabled": {
+      "name": "Auto Kill At %",
+      "description": "Kills the current attempt when the selected progress percentage is reached.",
+      "type": "bool",
+      "default": false
+    },
+    "auto-kill-percent": {
+      "name": "Auto Kill Percentage",
+      "description": "Progress threshold for Auto Kill At %.",
+      "type": "float",
+      "default": 50,
+      "min": 1,
+      "max": 100,
+      "step": 1
     }
   }
 }
