@@ -5,9 +5,9 @@
   },
   "id": "fakeskyline.gdcontrol",
   "name": "GD Control",
-  "version": "v0.1.6",
+  "version": "v0.1.7",
   "developer": "fakeskyline",
-  "description": "A Geometry Dash mod menu with a draggable floating button, No-Clip and Speedhack.",
+  "description": "A Geometry Dash mod menu with No-Clip, synchronized Speedhack, draggable controls and local icon unlocking.",
   "repository": "https://github.com/fakeskyline/GD-Control",
   "tags": [
     "gameplay",
@@ -24,12 +24,18 @@
     },
     "speed-multiplier": {
       "name": "Speedhack",
-      "description": "Multiplies the frame delta passed to the Cocos scheduler.",
+      "description": "Scales gameplay time and FMOD master pitch together.",
       "type": "float",
-      "default": 1.0,
+      "default": 1,
       "min": 0.25,
-      "max": 3.0,
+      "max": 3,
       "step": 0.05
+    },
+    "unlock-icons": {
+      "name": "Unlock Icons",
+      "description": "Locally treats every icon as unlocked. Does not write unlocks to your RobTop account.",
+      "type": "bool",
+      "default": false
     }
   }
 }

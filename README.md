@@ -4,22 +4,22 @@ A Geometry Dash mod for **GD 2.2091**, Geode **6.0.0-beta.1**, Android64.
 
 ## In-game controls
 
-- A floating **GD CONTROL** button is shown on the main menu.
-- Drag the button to reposition it. Its position is saved between launches.
-- Tap the button to open the in-game control panel.
-- **No-Clip** can be enabled or disabled directly in the panel.
-- **Speedhack** can be adjusted in 0.05x increments with the minus/plus buttons, from 0.25x to 3.00x. 1.00x is normal speed.
+- Floating **GD CONTROL** button; drag to reposition and tap to open the panel.
+- **No-Clip** toggle for both players.
+- **Speedhack** from 0.25x to 3.00x in 0.05x increments.
+- **Unlock Icons** makes the game's icon-unlock check return true locally while enabled.
 
-The same options remain available in Geode's mod settings as a fallback.
+## Speedhack audio synchronization
 
-## Gameplay hooks
+Speedhack scales the Cocos scheduler delta and the FMOD master channel group's pitch by the same multiplier. This keeps streamed level music aligned with gameplay. FMOD pitch affects all audio routed through the master group, including sound effects.
 
-- No-Clip hooks `PlayLayer::destroyPlayer` and suppresses normal death for player 1 and player 2 while enabled. Anticheat spikes and level completion are forwarded to the original game method.
-- Speedhack multiplies the delta time passed to `cocos2d::CCScheduler::update`.
+## Unlock Icons
+
+The mod hooks `GameManager::isIconUnlocked` and returns true while the option is enabled. It does not modify RobTop account data or permanently award achievements/unlocks. Disable the option to restore the game's normal unlock checks.
 
 ## Build
 
-GitHub Actions builds the Android64 (`arm64-v8a`) `.geode` package for Geometry Dash 2.2091.
+GitHub Actions builds Android64 (`arm64-v8a`) for Geometry Dash 2.2091.
 
 ## License
 

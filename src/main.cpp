@@ -3,6 +3,9 @@
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/CCScheduler.hpp>
+#include <Geode/modify/GameManager.hpp>
+#include <Geode/binding/FMODAudioEngine.hpp>
+#include <Geode/fmod/fmod.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -22,6 +25,10 @@ namespace {
         );
     }
 
+    bool isUnlockIconsEnabled() {
+        return Mod::get()->getSettingValue<bool>("unlock-icons");
+    }
+
     void setSpeedMultiplier(float value) {
         value = std::round(std::clamp(value, 0.25f, 3.0f) * 20.f) / 20.f;
         Mod::get()->setSettingValue<float>("speed-multiplier", value);
@@ -32,9 +39,10 @@ class GDControlPopup : public Popup {
 protected:
     CCLabelBMFont* m_noclipLabel = nullptr;
     CCLabelBMFont* m_speedLabel = nullptr;
+    CCLabelBMFont* m_iconsLabel = nullptr;
 
     bool init() {
-        if (!Popup::init(310.f, 220.f, "GJ_square01.png")) {
+        if (!Popup::init(310.f, 270.f, "GJ_square01.png")) {
             return false;
         }
 
@@ -52,32 +60,46 @@ protected:
 
         auto noclipTitle = CCLabelBMFont::create("NO-CLIP", "bigFont.fnt");
         noclipTitle->setScale(0.55f);
-        noclipTitle->setPosition({size.width / 2.f, 151.f});
+        noclipTitle->setPosition({size.width / 2.f, 195.f});
         m_mainLayer->addChild(noclipTitle);
 
         m_noclipLabel = CCLabelBMFont::create("", "goldFont.fnt");
         m_noclipLabel->setScale(0.65f);
-        m_noclipLabel->setPosition({size.width / 2.f, 126.f});
+        m_noclipLabel->setPosition({size.width / 2.f, 170.f});
         m_mainLayer->addChild(m_noclipLabel);
 
-        makeButton("TOGGLE", {size.width / 2.f, 96.f},
+        makeButton("TOGGLE", {size.width / 2.f, 140.f},
             menu_selector(GDControlPopup::onToggleNoclip), 0.55f);
 
         auto speedTitle = CCLabelBMFont::create("SPEEDHACK", "bigFont.fnt");
         speedTitle->setScale(0.55f);
-        speedTitle->setPosition({size.width / 2.f, 62.f});
+        speedTitle->setPosition({size.width / 2.f, 105.f});
         m_mainLayer->addChild(speedTitle);
 
-        makeButton("-", {size.width / 2.f - 75.f, 29.f},
+        makeButton("-", {size.width / 2.f - 75.f, 72.f},
             menu_selector(GDControlPopup::onSpeedDown), 0.55f);
 
         m_speedLabel = CCLabelBMFont::create("", "goldFont.fnt");
         m_speedLabel->setScale(0.7f);
-        m_speedLabel->setPosition({size.width / 2.f, 29.f});
+        m_speedLabel->setPosition({size.width / 2.f, 72.f});
         m_mainLayer->addChild(m_speedLabel);
 
-        makeButton("+", {size.width / 2.f + 75.f, 29.f},
+        makeButton("+", {size.width / 2.f + 75.f, 72.f},
             menu_selector(GDControlPopup::onSpeedUp), 0.55f);
+
+
+        auto iconsTitle = CCLabelBMFont::create("UNLOCK ICONS", "bigFont.fnt");
+        iconsTitle->setScale(0.5f);
+        iconsTitle->setPosition({size.width / 2.f, 35.f});
+        m_mainLayer->addChild(iconsTitle);
+
+        m_iconsLabel = CCLabelBMFont::create("", "goldFont.fnt");
+        m_iconsLabel->setScale(0.6f);
+        m_iconsLabel->setPosition({size.width / 2.f, 14.f});
+        m_mainLayer->addChild(m_iconsLabel);
+
+        makeButton("TOGGLE", {size.width / 2.f, -15.f},
+            menu_selector(GDControlPopup::onToggleIcons), 0.5f);
 
         this->refreshValues();
         return true;
@@ -90,10 +112,18 @@ protected:
         if (m_speedLabel) {
             m_speedLabel->setString(fmt::format("{:.2f}x", getSpeedMultiplier()).c_str());
         }
+        if (m_iconsLabel) {
+            m_iconsLabel->setString(isUnlockIconsEnabled() ? "ENABLED" : "DISABLED");
+        }
     }
 
     void onToggleNoclip(CCObject*) {
         Mod::get()->setSettingValue<bool>("noclip-enabled", !isNoclipEnabled());
+        this->refreshValues();
+    }
+
+    void onToggleIcons(CCObject*) {
+        Mod::get()->setSettingValue<bool>("unlock-icons", !isUnlockIconsEnabled());
         this->refreshValues();
     }
 
@@ -290,13 +320,32 @@ class $modify(GDControlPlayLayer, PlayLayer) {
 class $modify(GDControlScheduler, cocos2d::CCScheduler) {
     void update(float dt) override {
         auto speed = getSpeedMultiplier();
-        if (speed > 0.f && speed != 1.f) {
-            dt *= speed;
+
+        // Scale the game clock and FMOD's master clock together.
+        // The master channel group controls streamed level music too;
+        // changing m_globalChannel alone does not reliably affect it.
+        if (auto engine = FMODAudioEngine::sharedEngine()) {
+            if (engine->m_system) {
+                FMOD::ChannelGroup* masterGroup = nullptr;
+                if (engine->m_system->getMasterChannelGroup(&masterGroup) == FMOD_OK && masterGroup) {
+                    masterGroup->setPitch(speed);
+                }
+            }
         }
-        CCScheduler::update(dt);
+
+        CCScheduler::update(dt * speed);
+    }
+};
+
+class $modify(GDControlGameManager, GameManager) {
+    bool isIconUnlocked(int iconID, IconType type) {
+        if (isUnlockIconsEnabled()) {
+            return true;
+        }
+        return GameManager::isIconUnlocked(iconID, type);
     }
 };
 
 $on_mod(Loaded) {
-    log::info("GD Control v0.1.6 loaded for Geometry Dash 2.2091.");
+    log::info("GD Control v0.1.7 loaded for Geometry Dash 2.2091.");
 }
