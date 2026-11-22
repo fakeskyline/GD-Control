@@ -423,6 +423,7 @@ protected:
 
         const float innerW = contentW - 18.f;
         const float innerH = contentH - 18.f;
+        m_cardTitleMaxWidth = innerW * 0.42f;
         const float rowGap = 9.f;
         const float rowH = std::max(54.f, (innerH - rowGap * 2.f) / 3.f);
 
@@ -452,8 +453,9 @@ protected:
             {innerW - 64.f, rowH * 0.5f}, 108.f, 27.f,
             [this]() { onToggleNoclip(nullptr); }, &m_noclipAction);
 
+        CCLabelTTF* speedUnusedStatus = nullptr;
         auto speedRow = makeRow(m_pages[0], 1, tr("SPEEDHACK", "УСКОРЕНИЕ"),
-            m_speedTitle, "", m_hintLabel);
+            m_speedTitle, "", speedUnusedStatus);
         m_speedLabel = addText(speedRow, fmt::format("{:.2f}x", getSpeedMultiplier()).c_str(),
             {innerW * 0.68f, rowH * 0.5f}, 16.f, ccc3(208, 188, 255));
         addSmallButton(speedRow, "-", {innerW * 0.52f, rowH * 0.5f},
@@ -467,8 +469,8 @@ protected:
         addActionButton(autoRow, tr("Toggle", "Переключить"),
             {innerW - 62.f, rowH * 0.72f}, 100.f, 23.f,
             [this]() { onToggleAutoClicker(nullptr); }, &m_autoAction);
-        const float controlY1 = rowH * 0.34f;
-        const float controlY2 = rowH * 0.12f;
+        const float controlY1 = rowH * 0.31f;
+        const float controlY2 = rowH * 0.08f;
         m_autoHold = addText(autoRow, "", {innerW * 0.40f, controlY1},
             9.f, ccc3(224, 228, 240));
         m_autoRelease = addText(autoRow, "", {innerW * 0.40f, controlY2},
@@ -502,12 +504,12 @@ protected:
             m_tpsStatus);
         m_tpsValue = addText(tpsRow, fmt::format("{} TPS", getTPSBypassValue()).c_str(),
             {innerW * 0.57f, rowH * 0.5f}, 13.f, ccc3(208, 188, 255));
-        addSmallButton(tpsRow, "-", {innerW * 0.72f, rowH * 0.5f},
+        addSmallButton(tpsRow, "-", {innerW * 0.65f, rowH * 0.5f},
             [this]() { onTPSDown(nullptr); });
-        addSmallButton(tpsRow, "+", {innerW * 0.80f, rowH * 0.5f},
+        addSmallButton(tpsRow, "+", {innerW * 0.73f, rowH * 0.5f},
             [this]() { onTPSUp(nullptr); });
         addActionButton(tpsRow, tr("Toggle", "Переключить"),
-            {innerW - 58.f, rowH * 0.5f}, 94.f, 25.f,
+            {innerW * 0.89f, rowH * 0.5f}, std::min(88.f, innerW * 0.19f), 25.f,
             [this]() { onToggleTPS(nullptr); }, &m_tpsAction);
 
         auto fpsRow = makeRow(m_pages[2], 1, tr("FPS BYPASS", "ОБХОД FPS"),
@@ -515,12 +517,12 @@ protected:
             m_fpsStatus);
         m_fpsValue = addText(fpsRow, fmt::format("{} FPS", getFPSBypassValue()).c_str(),
             {innerW * 0.57f, rowH * 0.5f}, 13.f, ccc3(208, 188, 255));
-        addSmallButton(fpsRow, "-", {innerW * 0.72f, rowH * 0.5f},
+        addSmallButton(fpsRow, "-", {innerW * 0.65f, rowH * 0.5f},
             [this]() { onFPSDown(nullptr); });
-        addSmallButton(fpsRow, "+", {innerW * 0.80f, rowH * 0.5f},
+        addSmallButton(fpsRow, "+", {innerW * 0.73f, rowH * 0.5f},
             [this]() { onFPSUp(nullptr); });
         addActionButton(fpsRow, tr("Toggle", "Переключить"),
-            {innerW - 58.f, rowH * 0.5f}, 94.f, 25.f,
+            {innerW * 0.89f, rowH * 0.5f}, std::min(88.f, innerW * 0.19f), 25.f,
             [this]() { onToggleFPS(nullptr); }, &m_fpsAction);
 
         m_hintLabel = addText(m_mainLayer,
@@ -536,6 +538,9 @@ protected:
     void refreshValues() {
         if (m_titleLabel) m_titleLabel->setString("GD CONTROL");
         if (m_languageLabel) m_languageLabel->setString(isRussian() ? "RU" : "EN");
+        if (m_tabLabels[0]) m_tabLabels[0]->setString(tr("PLAYER", "ИГРОК"));
+        if (m_tabLabels[1]) m_tabLabels[1]->setString(tr("UNLOCKS", "РАЗБЛОКИРОВКИ"));
+        if (m_tabLabels[2]) m_tabLabels[2]->setString(tr("BYPASS", "ОБХОДЫ"));
 
         fitTitle(m_noclipTitle, tr("NO-CLIP", "НОУКЛИП"));
         fitTitle(m_speedTitle, tr("SPEEDHACK", "УСКОРЕНИЕ"));
