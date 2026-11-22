@@ -113,6 +113,9 @@ namespace {
     }
 }
 
+class GDControlPopup;
+static GDControlPopup* g_activePopup = nullptr;
+
 class GDControlPopup : public Popup {
 protected:
     CCLabelTTF* m_titleLabel = nullptr;
@@ -154,6 +157,9 @@ protected:
     CCNode* m_pages[3] = { nullptr, nullptr, nullptr };
     CCLabelTTF* m_tabLabels[3] = { nullptr, nullptr, nullptr };
     geode::NineSlice* m_tabBgs[3] = { nullptr, nullptr, nullptr };
+    CCMenuItemSpriteExtra* m_tabButtons[3] = { nullptr, nullptr, nullptr };
+    CCMenu* m_tabMenu = nullptr;
+    geode::NineSlice* m_contentBG = nullptr;
     CCLabelTTF* m_noclipCheck = nullptr;
     CCLabelTTF* m_iconsCheck = nullptr;
     CCLabelTTF* m_colorsCheck = nullptr;
@@ -341,88 +347,125 @@ protected:
                        [this]() { onAutoReleaseUp(nullptr); });
     }
 
+    void onTabButton(CCObject* sender) {
+        if (sender) setPage(sender->getTag());
+    }
+
     void setPage(int index) {
         if (index < 0 || index >= 3) return;
         m_activePage = index;
         for (int i = 0; i < 3; ++i) {
-            if (m_pages[i]) m_pages[i]->setVisible(i == index);
-            if (m_tabLabels[i]) m_tabLabels[i]->setColor(i == index
-                ? ccc3(245, 247, 252) : ccc3(170, 179, 195));
-            if (m_tabBgs[i]) m_tabBgs[i]->setColor(i == index
-                ? ccc3(54, 78, 124) : ccc3(38, 42, 52));
+            const bool active = i == index;
+            if (m_pages[i]) m_pages[i]->setVisible(active);
+            if (m_tabButtons[i]) m_tabButtons[i]->setEnabled(!active);
+            if (m_tabLabels[i]) m_tabLabels[i]->setColor(active
+                ? ccc3(36, 39, 58) : ccc3(202, 211, 245));
+            if (m_tabBgs[i]) m_tabBgs[i]->setColor(active
+                ? ccc3(202, 211, 245) : ccc3(54, 58, 79));
         }
     }
 
     bool init() {
         constexpr float panelW = 480.f;
         constexpr float panelH = 280.f;
-        if (!Popup::init(panelW, panelH, "GJ_square01.png")) return false;
+        if (!Popup::init(panelW, panelH)) return false;
 
-        auto win = CCDirector::sharedDirector()->getWinSize();
+        auto winSize = CCDirector::sharedDirector()->getWinSize();
         auto size = m_mainLayer->getContentSize();
-        const float w = size.width;
-        const float h = size.height;
 
         this->setTitle("");
-        m_buttonMenu->setContentSize(win);
-        m_closeBtn->setPosition({20.f, win.height - 20.f});
+        m_buttonMenu->setContentSize(winSize);
+        m_closeBtn->setPosition(20.f, winSize.height - 20.f);
         m_bgSprite->removeMeAndCleanup();
 
-        auto border = geode::NineSlice::create("square02b_001.png");
-        border->setContentSize(size);
-        border->setColor(ccc3(24, 26, 32));
-        m_mainLayer->addChildAtPosition(border, geode::Anchor::Center);
+        auto bgBehind = geode::NineSlice::create("square02b_001.png");
+        bgBehind->setContentSize(size * 0.5f);
+        bgBehind->setColor(ccc3(30, 32, 48));
+        bgBehind->setID("bg-behind");
+        m_mainLayer->addChildAtPosition(bgBehind, geode::Anchor::Center);
 
-        auto background = geode::NineSlice::create("square02b_001.png");
-        background->setContentSize(size - 3.f);
-        background->setColor(ccc3(43, 45, 52));
-        m_mainLayer->addChildAtPosition(background, geode::Anchor::Center);
+        m_bgSprite = geode::NineSlice::create("square02b_001.png");
+        m_bgSprite->setContentSize(size - 3.f);
+        m_bgSprite->setColor(ccc3(30, 32, 48));
+        m_bgSprite->setID("main-bg");
+        m_mainLayer->addChildAtPosition(m_bgSprite, geode::Anchor::Center);
 
-        auto contentBG = geode::NineSlice::create("square02b_001.png");
-        contentBG->setAnchorPoint({0.f, 1.f});
-        contentBG->setPosition({125.f, 270.f});
-        contentBG->setContentSize({345.f, 260.f});
-        contentBG->setColor(ccc3(35, 37, 44));
-        m_mainLayer->addChild(contentBG, 0);
+        m_contentBG = geode::NineSlice::create("square02b_001.png");
+        m_contentBG->setAnchorPoint({0.f, 1.f});
+        m_contentBG->setPosition(125.f, 270.f);
+        m_contentBG->setColor(ccc3(36, 39, 58));
+        m_contentBG->setContentSize({345.f, 260.f});
+        m_contentBG->setID("content-bg");
+        m_mainLayer->addChild(m_contentBG);
 
-        auto tabBG = geode::NineSlice::create("square02b_001.png");
-        tabBG->setAnchorPoint({0.f, 0.5f});
-        tabBG->setPosition({6.f, 140.f});
-        tabBG->setContentSize({115.f, 260.f});
-        tabBG->setColor(ccc3(35, 37, 44));
-        m_mainLayer->addChild(tabBG, 0);
+        auto bgTab = geode::NineSlice::create("square02b_001.png");
+        bgTab->setAnchorPoint({0.f, 0.5f});
+        bgTab->setContentSize({115.f, 260.f});
+        bgTab->setColor(ccc3(36, 39, 58));
+        bgTab->setPosition(6.f, 140.f);
+        bgTab->setID("tab-bg");
+        m_mainLayer->addChild(bgTab);
 
         constexpr float contentW = 345.f;
         constexpr float contentH = 260.f;
+
+        m_tabMenu = CCMenu::create();
+        m_tabMenu->setContentSize({120.f, 260.f});
+        m_tabMenu->setAnchorPoint({0.5f, 0.5f});
         const char* navEn[3] = {"PLAYER", "UNLOCKS", "BYPASS"};
         const char* navRu[3] = {"ИГРОК", "РАЗБЛОКИРОВКИ", "ОБХОДЫ"};
+
         for (int i = 0; i < 3; ++i) {
             auto tabNode = CCNode::create();
-            tabNode->setContentSize({120.f, 28.f});
             tabNode->setScale(0.9f);
-            auto tabSprite = geode::NineSlice::create("square02b_001.png", {0.f, 0.f, 80.f, 80.f});
-            tabSprite->setContentSize({120.f, 36.f});
-            tabSprite->setScaleY(0.75f);
-            tabNode->addChildAtPosition(tabSprite, geode::Anchor::Center);
+            tabNode->setContentSize({120.f, 28.f});
+
+            auto tabBG = geode::NineSlice::create("square02b_001.png", {0.f, 0.f, 80.f, 80.f});
+            tabBG->setContentSize({120.f, 36.f});
+            tabBG->setScaleY(0.75f);
+            tabNode->addChildAtPosition(tabBG, geode::Anchor::Center);
+
             auto label = CCLabelTTF::create(isRussian() ? navRu[i] : navEn[i], "Arial", 12.f);
-            label->setColor(i == 0 ? ccc3(255, 255, 255) : ccc3(190, 193, 201));
+            label->setColor(ccc3(202, 211, 245));
+            label->setAnchorPoint({0.5f, 0.5f});
             if (label->getContentSize().width > 100.f)
                 label->setScale(100.f / label->getContentSize().width);
             tabNode->addChildAtPosition(label, geode::Anchor::Center);
-            auto button = geode::Button::createWithNode(tabNode,
-                [this, i](geode::Button*) { setPage(i); });
-            button->setPosition({67.5f, 246.f - i * 28.5f});
-            button->setAnimationType(geode::Button::AnimationType::Scale);
-            m_mainLayer->addChild(button, 10);
+
+            auto button = CCMenuItemSpriteExtra::create(
+                tabNode, this, menu_selector(GDControlPopup::onTabButton)
+            );
+            button->setTag(i);
+            m_tabMenu->addChild(button);
+
             m_tabLabels[i] = label;
-            m_tabBgs[i] = tabSprite;
+            m_tabBgs[i] = tabBG;
+            m_tabButtons[i] = button;
         }
+
+        m_tabMenu->setLayout(
+            geode::AxisLayout::create(geode::Axis::Column)
+                ->setAutoScale(false)
+                ->setAxisReverse(true)
+                ->setGrowCrossAxis(false)
+                ->setCrossAxisOverflow(true)
+                ->setGap(0.5f)
+                ->setAxisAlignment(geode::AxisAlignment::End)
+                ->setCrossAxisAlignment(geode::AxisAlignment::Start)
+                ->setCrossAxisLineAlignment(geode::AxisAlignment::Center)
+                ->ignoreInvisibleChildren(false),
+            true
+        );
+        m_tabMenu->setContentHeight(260.f);
+        m_tabMenu->updateLayout();
+        bgTab->addChildAtPosition(m_tabMenu, geode::Anchor::Center, {0.f, -20.f});
+
         for (int i = 0; i < 3; ++i) {
             m_pages[i] = CCNode::create();
             m_pages[i]->setContentSize({contentW, contentH});
             m_pages[i]->setAnchorPoint({0.f, 1.f});
-            m_pages[i]->setPosition({125.f, 270.f});
-            m_mainLayer->addChild(m_pages[i], 5);
+            m_pages[i]->setPosition(125.f, 270.f);
+            m_mainLayer->addChild(m_pages[i], 1);
         }
 
         auto addComponentRow = [&](CCNode* page, int index, const char* title,
@@ -430,7 +473,7 @@ protected:
                                    bool checked, std::function<void()> toggle) -> CCNode* {
             constexpr float rowHeight = 28.f;
             constexpr float rowGap = 2.5f;
-            const float centerY = contentH - 17.f - index * (rowHeight + rowGap);
+            const float centerY = contentH - 29.f - index * (rowHeight + rowGap);
 
             auto row = CCNode::create();
             row->setContentSize({contentW, rowHeight});
@@ -462,7 +505,7 @@ protected:
                                CCLabelTTF*& titleOut) -> CCNode* {
             constexpr float rowHeight = 28.f;
             constexpr float rowGap = 2.5f;
-            const float centerY = contentH - 17.f - index * (rowHeight + rowGap);
+            const float centerY = contentH - 29.f - index * (rowHeight + rowGap);
             auto row = CCNode::create();
             row->setContentSize({contentW, rowHeight});
             row->setPosition({0.f, centerY - rowHeight * 0.5f});
@@ -657,10 +700,17 @@ protected:
     }
 
 public:
+    void onExit() override {
+        Popup::onExit();
+        if (g_activePopup == this) g_activePopup = nullptr;
+    }
+
     static GDControlPopup* create() {
+        if (g_activePopup) return nullptr;
         auto ret = new GDControlPopup();
         if (ret && ret->init()) {
             ret->autorelease();
+            g_activePopup = ret;
             return ret;
         }
         CC_SAFE_DELETE(ret);
@@ -749,7 +799,9 @@ protected:
             Mod::get()->setSavedValue<float>("floating-button-y", m_sprite->getPositionY());
             return;
         }
-        if (auto popup = GDControlPopup::create()) popup->show();
+        if (!g_activePopup) {
+            if (auto popup = GDControlPopup::create()) popup->show();
+        }
     }
 
     void ccTouchCancelled(CCTouch*, CCEvent*) override {
@@ -983,7 +1035,7 @@ class $modify(GDControlGameManager, GameManager) {
 };
 
 $on_mod(Loaded) {
-    log::info("GD Control v0.2.5 loaded for Geometry Dash 2.2091.");
+    log::info("GD Control v0.2.6 loaded for Geometry Dash 2.2091.");
     installFloatingButton();
     if (isFPSBypassEnabled()) applyFPSBypass();
 }
