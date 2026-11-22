@@ -5,9 +5,9 @@
   },
   "id": "fakeskyline.gdcontrol",
   "name": "GD Control",
-  "version": "v0.2.6",
+  "version": "v0.2.7",
   "developer": "fakeskyline",
-  "description": "A mobile-friendly Geometry Dash mod menu with No-Clip, Speedhack, Instant Complete, Unlock Icons, Unlock Colors, Practice Music Sync, Auto Clicker, TPS Bypass and FPS Bypass.",
+  "description": "A mobile-friendly Geometry Dash mod menu with gameplay, editor and utility features including Startpos Switcher.",
   "repository": "https://github.com/fakeskyline/GD-Control",
   "tags": [
     "gameplay",
@@ -48,6 +48,26 @@
       "description": "Locally unlocks the Practice Music Sync shop requirement. Enable Practice Music Sync in the in-level pause settings.",
       "type": "bool",
       "default": false
+    },
+    "startpos-previous-key": {
+      "type": "keybind",
+      "name": "Previous start position",
+      "description": "Selects the previous start position in the editor and during playtesting.",
+      "default": "Q",
+      "category": "editor"
+    },
+    "startpos-next-key": {
+      "type": "keybind",
+      "name": "Next start position",
+      "description": "Selects the next start position in the editor and during playtesting.",
+      "default": "E",
+      "category": "editor"
+    },
+    "startpos-include-level-start": {
+      "type": "bool",
+      "name": "Include level start",
+      "description": "Include the beginning of the level in the start position cycle.",
+      "default": true
     }
   }
 }
