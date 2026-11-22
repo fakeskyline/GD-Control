@@ -1,5 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/ui/Popup.hpp>
+#include <Geode/ui/Button.hpp>
+#include <Geode/ui/NineSlice.hpp>
 #include <Geode/modify/GJBaseGameLayer.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
@@ -12,6 +14,7 @@
 #include <algorithm>
 #include <cmath>
 #include <chrono>
+#include <functional>
 
 using namespace geode::prelude;
 
@@ -162,51 +165,72 @@ protected:
     }
 
     CCNode* addCard(float centerX, float centerY, float cardW, float cardH) {
-        auto card = CCLayerColor::create(ccc4(0, 0, 0, 255), cardW, cardH);
+        auto card = geode::NineSlice::create("GJ_square01.png", {}, {12.f, 12.f, 12.f, 12.f});
+        if (!card) return nullptr;
+        card->setContentSize({cardW, cardH});
+        card->setColor(ccc3(34, 78, 190));
         card->setPosition({centerX - cardW * 0.5f, centerY - cardH * 0.5f});
         m_mainLayer->addChild(card, 2);
         return card;
     }
 
-    CCMenuItemSpriteExtra* addActionButton(const char* text, CCPoint pos,
-                                           float width, float height,
-                                           SEL_MenuHandler callback,
-                                           CCLabelTTF** outLabel = nullptr) {
-        auto bg = ButtonSprite::create(" ", "bigFont.fnt", "GJ_button_01.png", 0.65f);
+    geode::Button* addActionButton(CCNode* parent, const char* text, CCPoint pos,
+                                   float width, float height,
+                                   std::function<void()> callback,
+                                   CCLabelTTF** outLabel = nullptr) {
+        auto bg = geode::NineSlice::create("GJ_button_01.png", {}, {9.f, 9.f, 9.f, 9.f});
         if (!bg) return nullptr;
-        bg->setScaleX(width / bg->getContentSize().width);
-        bg->setScaleY(height / bg->getContentSize().height);
-        auto label = CCLabelTTF::create(text, "Arial", std::min(13.f, height * 0.48f));
+        bg->setContentSize({width, height});
+
+        auto label = CCLabelTTF::create(text, "Arial", std::min(13.f, height * 0.46f));
+        if (!label) return nullptr;
         label->setColor(ccc3(255, 255, 255));
-        label->setPosition(bg->getContentSize() * 0.5f);
+        label->setPosition({width * 0.5f, height * 0.5f});
+        const float maxLabelWidth = width - 12.f;
+        if (label->getContentSize().width > maxLabelWidth) {
+            label->setScale(maxLabelWidth / label->getContentSize().width);
+        }
         bg->addChild(label, 5);
-        auto item = CCMenuItemSpriteExtra::create(bg, this, callback);
-        auto popupSize = m_mainLayer->getContentSize();
-        item->setPosition({pos.x - popupSize.width * 0.5f,
-                           pos.y - popupSize.height * 0.5f});
-        m_buttonMenu->addChild(item);
+
+        auto button = geode::Button::createWithNode(
+            bg,
+            [callback = std::move(callback)](geode::Button*) {
+                if (callback) callback();
+            }
+        );
+        if (!button) return nullptr;
+        button->setPosition(pos);
+        button->setAnimationType(geode::Button::AnimationType::Scale);
+        parent->addChild(button, 20);
         if (outLabel) *outLabel = label;
-        return item;
+        return button;
     }
 
-    CCMenuItemSpriteExtra* addSmallButton(const char* text, CCPoint pos,
-                                          SEL_MenuHandler callback) {
+    geode::Button* addSmallButton(CCNode* parent, const char* text, CCPoint pos,
+                                  std::function<void()> callback) {
+        auto bg = geode::NineSlice::create("GJ_button_02.png", {}, {8.f, 8.f, 8.f, 8.f});
+        if (!bg) return nullptr;
         constexpr float buttonW = 30.f;
         constexpr float buttonH = 27.f;
-        auto bg = ButtonSprite::create(" ", "bigFont.fnt", "GJ_button_02.png", 0.65f);
-        if (!bg) return nullptr;
-        bg->setScaleX(buttonW / bg->getContentSize().width);
-        bg->setScaleY(buttonH / bg->getContentSize().height);
+        bg->setContentSize({buttonW, buttonH});
+
         auto label = CCLabelTTF::create(text, "Arial", 15.f);
+        if (!label) return nullptr;
         label->setColor(ccc3(255, 255, 255));
-        label->setPosition(bg->getContentSize() * 0.5f);
+        label->setPosition({buttonW * 0.5f, buttonH * 0.5f});
         bg->addChild(label, 5);
-        auto item = CCMenuItemSpriteExtra::create(bg, this, callback);
-        auto popupSize = m_mainLayer->getContentSize();
-        item->setPosition({pos.x - popupSize.width * 0.5f,
-                           pos.y - popupSize.height * 0.5f});
-        m_buttonMenu->addChild(item);
-        return item;
+
+        auto button = geode::Button::createWithNode(
+            bg,
+            [callback = std::move(callback)](geode::Button*) {
+                if (callback) callback();
+            }
+        );
+        if (!button) return nullptr;
+        button->setPosition(pos);
+        button->setAnimationType(geode::Button::AnimationType::Scale);
+        parent->addChild(button, 20);
+        return button;
     }
 
     void fitTitle(CCLabelTTF* label, const char* text) {
@@ -219,50 +243,50 @@ protected:
     void buildToggleCard(float cx, float cy, float cardW, float cardH,
                          const char* title, CCLabelTTF*& titleLabel,
                          CCLabelTTF*& statusLabel, CCLabelTTF*& actionLabel,
-                         const char* status, SEL_MenuHandler callback) {
+                         const char* status, std::function<void()> callback) {
         auto card = addCard(cx, cy, cardW, cardH);
         titleLabel = addText(card, title, {cardW * 0.5f, cardH * 0.78f},
                              17.f, ccc3(238, 241, 248), cardW * 0.9f);
         statusLabel = addText(card, status, {cardW * 0.5f, cardH * 0.49f},
                               13.f, ccc3(190, 205, 255));
-        addActionButton(tr("Toggle", "Переключить"),
-                        {cx, cy - cardH * 0.24f},
-                        std::min(142.f, cardW * 0.58f), 27.f,
-                        callback, &actionLabel);
+        addActionButton(card, tr("Toggle", "Переключить"),
+                        {cardW * 0.5f, cardH * 0.19f},
+                        std::min(118.f, cardW * 0.52f), 27.f,
+                        std::move(callback), &actionLabel);
     }
 
     void buildValueCard(float cx, float cy, float cardW, float cardH,
                         const char* title, CCLabelTTF*& titleLabel,
                         CCLabelTTF*& valueLabel, const char* value,
-                        SEL_MenuHandler down, SEL_MenuHandler up) {
+                        std::function<void()> down, std::function<void()> up) {
         auto card = addCard(cx, cy, cardW, cardH);
         titleLabel = addText(card, title, {cardW * 0.5f, cardH * 0.78f},
                              17.f, ccc3(238, 241, 248), cardW * 0.9f);
-        valueLabel = addText(card, value, {cardW * 0.5f, cardH * 0.37f},
+        valueLabel = addText(card, value, {cardW * 0.5f, cardH * 0.36f},
                              20.f, ccc3(208, 188, 255));
-        addSmallButton("-", {cx - cardW * 0.27f, cy - cardH * 0.12f}, down);
-        addSmallButton("+", {cx + cardW * 0.27f, cy - cardH * 0.12f}, up);
+        addSmallButton(card, "-", {cardW * 0.27f, cardH * 0.34f}, std::move(down));
+        addSmallButton(card, "+", {cardW * 0.73f, cardH * 0.34f}, std::move(up));
     }
 
     void buildRateCard(float cx, float cy, float cardW, float cardH,
                        const char* title, CCLabelTTF*& titleLabel,
                        CCLabelTTF*& statusLabel, CCLabelTTF*& valueLabel,
                        CCLabelTTF*& actionLabel, const char* status,
-                       const char* value, SEL_MenuHandler toggle,
-                       SEL_MenuHandler down, SEL_MenuHandler up) {
+                       const char* value, std::function<void()> toggle,
+                       std::function<void()> down, std::function<void()> up) {
         auto card = addCard(cx, cy, cardW, cardH);
         titleLabel = addText(card, title, {cardW * 0.5f, cardH * 0.82f},
                              16.f, ccc3(238, 241, 248), cardW * 0.9f);
-        statusLabel = addText(card, status, {cardW * 0.25f, cardH * 0.62f},
-                              10.f, ccc3(190, 205, 255), cardW * 0.44f);
-        addActionButton(tr("Toggle", "Переключить"),
-                        {cx + cardW * 0.18f, cy + cardH * 0.08f},
-                        std::min(82.f, cardW * 0.40f), 22.f,
-                        toggle, &actionLabel);
-        valueLabel = addText(card, value, {cardW * 0.5f, cardH * 0.22f},
-                             14.f, ccc3(208, 188, 255));
-        addSmallButton("-", {cx - cardW * 0.28f, cy - cardH * 0.27f}, down);
-        addSmallButton("+", {cx + cardW * 0.28f, cy - cardH * 0.27f}, up);
+        statusLabel = addText(card, status, {cardW * 0.5f, cardH * 0.62f},
+                              11.f, ccc3(190, 205, 255), cardW * 0.85f);
+        valueLabel = addText(card, value, {cardW * 0.5f, cardH * 0.37f},
+                             15.f, ccc3(208, 188, 255));
+        addSmallButton(card, "-", {cardW * 0.23f, cardH * 0.13f}, std::move(down));
+        addActionButton(card, tr("Toggle", "Переключить"),
+                        {cardW * 0.5f, cardH * 0.13f},
+                        std::min(104.f, cardW * 0.42f), 25.f,
+                        std::move(toggle), &actionLabel);
+        addSmallButton(card, "+", {cardW * 0.77f, cardH * 0.13f}, std::move(up));
     }
 
     void buildAutoClickerCard(float cx, float cy, float cardW, float cardH) {
@@ -270,29 +294,29 @@ protected:
         m_autoTitle = addText(card, tr("AUTO CLICKER", "АВТОКЛИКЕР"),
                               {cardW * 0.5f, cardH * 0.83f},
                               16.f, ccc3(238, 241, 248), cardW * 0.9f);
-        m_autoStatus = addText(card, "", {cardW * 0.28f, cardH * 0.61f},
+        m_autoStatus = addText(card, "", {cardW * 0.5f, cardH * 0.63f},
                                11.f, ccc3(190, 205, 255));
-        addActionButton(tr("Toggle", "Переключить"),
-                        {cx + cardW * 0.18f, cy + cardH * 0.10f},
-                        std::min(82.f, cardW * 0.40f), 22.f,
-                        menu_selector(GDControlPopup::onToggleAutoClicker),
+        addActionButton(card, tr("Toggle", "Переключить"),
+                        {cardW * 0.5f, cardH * 0.45f},
+                        std::min(98.f, cardW * 0.44f), 23.f,
+                        [this]() { onToggleAutoClicker(nullptr); },
                         &m_autoAction);
 
-        m_autoHold = addText(card, "", {cardW * 0.34f, cardH * 0.34f},
+        m_autoHold = addText(card, "", {cardW * 0.30f, cardH * 0.25f},
                              11.f, ccc3(224, 228, 240));
-        m_autoRelease = addText(card, "", {cardW * 0.34f, cardH * 0.12f},
+        m_autoRelease = addText(card, "", {cardW * 0.30f, cardH * 0.10f},
                                 11.f, ccc3(224, 228, 240));
 
-        const float minusX = cx + cardW * 0.58f;
-        const float plusX = cx + cardW * 0.78f;
-        addSmallButton("-", {minusX, cy - cardH * 0.16f},
-                       menu_selector(GDControlPopup::onAutoHoldDown));
-        addSmallButton("+", {plusX, cy - cardH * 0.16f},
-                       menu_selector(GDControlPopup::onAutoHoldUp));
-        addSmallButton("-", {minusX, cy - cardH * 0.38f},
-                       menu_selector(GDControlPopup::onAutoReleaseDown));
-        addSmallButton("+", {plusX, cy - cardH * 0.38f},
-                       menu_selector(GDControlPopup::onAutoReleaseUp));
+        const float minusX = cardW * 0.66f;
+        const float plusX = cardW * 0.84f;
+        addSmallButton(card, "-", {minusX, cardH * 0.25f},
+                       [this]() { onAutoHoldDown(nullptr); });
+        addSmallButton(card, "+", {plusX, cardH * 0.25f},
+                       [this]() { onAutoHoldUp(nullptr); });
+        addSmallButton(card, "-", {minusX, cardH * 0.10f},
+                       [this]() { onAutoReleaseDown(nullptr); });
+        addSmallButton(card, "+", {plusX, cardH * 0.10f},
+                       [this]() { onAutoReleaseUp(nullptr); });
     }
 
     bool init() {
@@ -305,94 +329,98 @@ protected:
         const float w = size.width;
         const float h = size.height;
 
-        auto surface = CCLayerColor::create(ccc4(25, 29, 38, 255), w, h);
-        surface->setPosition({0.f, 0.f});
-        m_mainLayer->addChild(surface, -10);
+        // Tint Popup's actual NineSlice background; a layer behind it is hidden.
+        if (m_bgSprite) {
+            m_bgSprite->setColor(ccc3(42, 88, 190));
+            m_bgSprite->setOpacity(255);
+        }
 
         m_titleLabel = addText(m_mainLayer, "GD CONTROL",
-                               {w * 0.5f, h * 0.91f}, 26.f,
+                               {w * 0.5f, h * 0.91f}, 25.f,
                                ccc3(238, 241, 248));
-        auto langBg = CCLayerColor::create(ccc4(0, 0, 0, 255), 74.f, 32.f);
-        auto langText = CCLabelTTF::create("EN", "Arial", 13.f);
-        langText->setColor(ccc3(220, 228, 245));
-        langText->setPosition({37.f, 16.f});
-        langBg->addChild(langText);
-        auto langItem = CCMenuItemSpriteExtra::create(
-            langBg, this, menu_selector(GDControlPopup::onToggleLanguage)
+        auto langBg = geode::NineSlice::create("GJ_button_02.png", {}, {8.f, 8.f, 8.f, 8.f});
+        langBg->setContentSize({70.f, 32.f});
+        auto langText = CCLabelTTF::create(isRussian() ? "RU" : "EN", "Arial", 13.f);
+        langText->setColor(ccc3(255, 255, 255));
+        langText->setPosition({35.f, 16.f});
+        langBg->addChild(langText, 5);
+        auto langButton = geode::Button::createWithNode(
+            langBg,
+            [this](geode::Button*) { onToggleLanguage(nullptr); }
         );
-        langItem->setPosition({w * 0.84f - w * 0.5f,
-                                h * 0.91f - h * 0.5f});
-        m_buttonMenu->addChild(langItem);
+        langButton->setPosition({w * 0.84f, h * 0.91f});
+        langButton->setAnimationType(geode::Button::AnimationType::Scale);
+        m_mainLayer->addChild(langButton, 100);
         m_languageLabel = langText;
 
         const bool landscape = w >= h * 1.2f;
         const int columns = landscape ? 3 : 2;
+        const int rows = (7 + columns - 1) / columns;
         const float marginX = w * 0.035f;
         const float gapX = w * 0.025f;
         const float cardW = (w - marginX * 2.f - gapX * (columns - 1)) / columns;
-        const float cardH = landscape ? h * 0.205f : h * 0.155f;
+        const float topCenter = h * 0.75f;
+        const float bottomCenter = h * 0.17f;
+        const float rowStep = rows > 1 ? (topCenter - bottomCenter) / (rows - 1) : 0.f;
+        const float cardH = std::min(
+            landscape ? h * 0.205f : h * 0.155f,
+            std::max(72.f, rowStep - 12.f)
+        );
         m_cardTitleMaxWidth = cardW * 0.88f;
-
-        const float gapY = landscape ? h * 0.045f : h * 0.035f;
-        const float headerBottom = h * 0.82f;
-        const float footerTop = h * 0.09f;
-        const int rows = (7 + columns - 1) / columns;
-        const float usableH = headerBottom - footerTop;
-        const float rowStep = rows > 1
-            ? std::min(cardH + gapY, (usableH - cardH) / (rows - 1))
-            : cardH;
-        const float firstY = headerBottom - cardH * 0.5f;
 
         auto cardCenter = [&](int index) -> CCPoint {
             const int row = index / columns;
             const int col = index % columns;
-            const float x = marginX + cardW * 0.5f + col * (cardW + gapX);
-            const float y = firstY - row * rowStep;
+            float x = marginX + cardW * 0.5f + col * (cardW + gapX);
+            if (row == rows - 1 && (7 % columns) == 1) {
+                x = w * 0.5f;
+            }
+            const float y = topCenter - row * rowStep;
             return {x, y};
         };
 
-        auto p0 = cardCenter(0);
-        auto p1 = cardCenter(1);
-        auto p2 = cardCenter(2);
-        auto p3 = cardCenter(3);
-        auto p4 = cardCenter(4);
-        auto p5 = cardCenter(5);
-        auto p6 = cardCenter(6);
+        const auto p0 = cardCenter(0);
+        const auto p1 = cardCenter(1);
+        const auto p2 = cardCenter(2);
+        const auto p3 = cardCenter(3);
+        const auto p4 = cardCenter(4);
+        const auto p5 = cardCenter(5);
+        const auto p6 = cardCenter(6);
 
         buildToggleCard(p0.x, p0.y, cardW, cardH, tr("NO-CLIP", "НОУКЛИП"),
                         m_noclipTitle, m_noclipLabel, m_noclipAction,
                         isNoclipEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"),
-                        menu_selector(GDControlPopup::onToggleNoclip));
+                        [this]() { onToggleNoclip(nullptr); });
         buildValueCard(p1.x, p1.y, cardW, cardH, tr("SPEEDHACK", "УСКОРЕНИЕ"),
                        m_speedTitle, m_speedLabel,
                        fmt::format("{:.2f}x", getSpeedMultiplier()).c_str(),
-                       menu_selector(GDControlPopup::onSpeedDown),
-                       menu_selector(GDControlPopup::onSpeedUp));
+                       [this]() { onSpeedDown(nullptr); },
+                       [this]() { onSpeedUp(nullptr); });
         buildToggleCard(p2.x, p2.y, cardW, cardH, tr("UNLOCK ICONS", "РАЗБЛОКИРОВКА ИКОНОК"),
                         m_iconsTitle, m_iconsLabel, m_iconsAction,
                         isUnlockIconsEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"),
-                        menu_selector(GDControlPopup::onToggleIcons));
+                        [this]() { onToggleIcons(nullptr); });
         buildToggleCard(p3.x, p3.y, cardW, cardH, tr("PRACTICE MUSIC", "МУЗЫКА В ПРАКТИКЕ"),
                         m_musicTitle, m_musicLabel, m_musicAction,
                         isPracticeMusicEnabled() ? tr("Unlocked", "Разблокировано") : tr("Locked", "Заблокировано"),
-                        menu_selector(GDControlPopup::onTogglePracticeMusic));
+                        [this]() { onTogglePracticeMusic(nullptr); });
         buildAutoClickerCard(p4.x, p4.y, cardW, cardH);
         buildRateCard(p5.x, p5.y, cardW, cardH,
                       tr("TPS BYPASS", "ОБХОД TPS"),
                       m_tpsTitle, m_tpsStatus, m_tpsValue, m_tpsAction,
                       isTPSBypassEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"),
                       fmt::format("{} TPS", getTPSBypassValue()).c_str(),
-                      menu_selector(GDControlPopup::onToggleTPS),
-                      menu_selector(GDControlPopup::onTPSDown),
-                      menu_selector(GDControlPopup::onTPSUp));
+                      [this]() { onToggleTPS(nullptr); },
+                      [this]() { onTPSDown(nullptr); },
+                      [this]() { onTPSUp(nullptr); });
         buildRateCard(p6.x, p6.y, cardW, cardH,
                       tr("FPS BYPASS", "ОБХОД FPS"),
                       m_fpsTitle, m_fpsStatus, m_fpsValue, m_fpsAction,
                       isFPSBypassEnabled() ? tr("Enabled", "Включено") : tr("Disabled", "Выключено"),
                       fmt::format("{} FPS", getFPSBypassValue()).c_str(),
-                      menu_selector(GDControlPopup::onToggleFPS),
-                      menu_selector(GDControlPopup::onFPSDown),
-                      menu_selector(GDControlPopup::onFPSUp));
+                      [this]() { onToggleFPS(nullptr); },
+                      [this]() { onFPSDown(nullptr); },
+                      [this]() { onFPSUp(nullptr); });
 
         m_hintLabel = addText(m_mainLayer,
             tr("Local settings · changes apply instantly",
