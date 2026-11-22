@@ -2,24 +2,22 @@
 
 A Geometry Dash mod for **GD 2.2091**, Geode **6.0.0-beta.1**, Android64.
 
-## In-game controls
+## Features
 
-- Floating **GD CONTROL** button; drag to reposition and tap to open the panel.
-- **No-Clip** toggle for both players.
-- **Speedhack** from 0.25x to 3.00x in 0.05x increments.
-- **Unlock Icons** makes the game's icon-unlock check return true locally while enabled.
+- Draggable floating **GD CONTROL** button.
+- Full-screen, responsive in-game control panel laid out in two columns.
+- No-Clip toggle.
+- Speedhack from 0.25x to 3.00x with FMOD master pitch synchronization.
+- Local Unlock Icons toggle.
+- Unlock Practice Music: locally bypasses the Music Unlocker shop check for the Practice Music Sync item.
 
-## Speedhack audio synchronization
+## Practice Music
 
-Speedhack scales the Cocos scheduler delta and the FMOD master channel group's pitch by the same multiplier. This keeps streamed level music aligned with gameplay. FMOD pitch affects all audio routed through the master group, including sound effects.
-
-## Unlock Icons
-
-The mod hooks `GameManager::isIconUnlocked` and returns true while the option is enabled. It does not modify RobTop account data or permanently award achievements/unlocks. Disable the option to restore the game's normal unlock checks.
+Enable **Unlock Practice Music** in the GD Control panel. Then open a level's pause menu, enter its extended settings (gear), and enable **Practice Music Sync**. This makes Practice Mode use the level's normal soundtrack synchronized to the current level position. The mod only bypasses the local unlock check; it does not change account/shop data.
 
 ## Build
 
-GitHub Actions builds Android64 (`arm64-v8a`) for Geometry Dash 2.2091.
+GitHub Actions builds Android64 for Geometry Dash 2.2091.
 
 ## License
 

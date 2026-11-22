@@ -5,9 +5,9 @@
   },
   "id": "fakeskyline.gdcontrol",
   "name": "GD Control",
-  "version": "v0.1.7",
+  "version": "v0.1.8",
   "developer": "fakeskyline",
-  "description": "A Geometry Dash mod menu with No-Clip, synchronized Speedhack, draggable controls and local icon unlocking.",
+  "description": "A mobile-friendly full-screen Geometry Dash mod menu with No-Clip, Speedhack, local icon unlock and Practice Music Sync unlock.",
   "repository": "https://github.com/fakeskyline/GD-Control",
   "tags": [
     "gameplay",
@@ -34,6 +34,12 @@
     "unlock-icons": {
       "name": "Unlock Icons",
       "description": "Locally treats every icon as unlocked. Does not write unlocks to your RobTop account.",
+      "type": "bool",
+      "default": false
+    },
+    "unlock-practice-music": {
+      "name": "Unlock Practice Music",
+      "description": "Locally unlocks the Practice Music Sync shop requirement. Enable Practice Music Sync in the in-level pause settings.",
       "type": "bool",
       "default": false
     }

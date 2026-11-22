@@ -4,6 +4,7 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/CCScheduler.hpp>
 #include <Geode/modify/GameManager.hpp>
+#include <Geode/modify/GameStatsManager.hpp>
 #include <Geode/binding/FMODAudioEngine.hpp>
 #include <Geode/fmod/fmod.hpp>
 
@@ -25,6 +26,10 @@ namespace {
         );
     }
 
+    bool isPracticeMusicEnabled() {
+        return Mod::get()->getSettingValue<bool>("unlock-practice-music");
+    }
+
     bool isUnlockIconsEnabled() {
         return Mod::get()->getSettingValue<bool>("unlock-icons");
     }
@@ -40,15 +45,23 @@ protected:
     CCLabelBMFont* m_noclipLabel = nullptr;
     CCLabelBMFont* m_speedLabel = nullptr;
     CCLabelBMFont* m_iconsLabel = nullptr;
+    CCLabelBMFont* m_practiceMusicLabel = nullptr;
 
     bool init() {
-        if (!Popup::init(310.f, 270.f, "GJ_square01.png")) {
+        auto win = CCDirector::sharedDirector()->getWinSize();
+        auto panelWidth = std::max(300.f, win.width - 24.f);
+        auto panelHeight = std::max(220.f, win.height - 24.f);
+        if (!Popup::init(panelWidth, panelHeight, "GJ_square01.png")) {
             return false;
         }
 
-        this->setTitle("GD CONTROL", "goldFont.fnt", 0.8f);
-
+        this->setTitle("GD CONTROL", "goldFont.fnt", 0.85f);
         auto size = m_mainLayer->getContentSize();
+        auto centerX = size.width * 0.5f;
+        auto centerY = size.height * 0.5f;
+        auto columnOffset = std::min(size.width * 0.24f, 190.f);
+        auto leftX = centerX - columnOffset;
+        auto rightX = centerX + columnOffset;
 
         auto makeButton = [this](const char* text, CCPoint pos, SEL_MenuHandler callback, float scale = 0.65f) {
             auto sprite = ButtonSprite::create(text, "goldFont.fnt", "GJ_button_01.png", scale);
@@ -58,63 +71,66 @@ protected:
             return item;
         };
 
-        auto noclipTitle = CCLabelBMFont::create("NO-CLIP", "bigFont.fnt");
-        noclipTitle->setScale(0.55f);
-        noclipTitle->setPosition({size.width / 2.f, 195.f});
-        m_mainLayer->addChild(noclipTitle);
+        auto addSectionTitle = [this](const char* text, CCPoint pos) {
+            auto label = CCLabelBMFont::create(text, "bigFont.fnt");
+            label->setScale(0.58f);
+            label->setPosition(pos);
+            m_mainLayer->addChild(label);
+            return label;
+        };
 
+        auto rowTop = centerY + 48.f;
+        auto rowBottom = centerY - 42.f;
+
+        addSectionTitle("NO-CLIP", {leftX, rowTop});
         m_noclipLabel = CCLabelBMFont::create("", "goldFont.fnt");
-        m_noclipLabel->setScale(0.65f);
-        m_noclipLabel->setPosition({size.width / 2.f, 170.f});
+        m_noclipLabel->setScale(0.72f);
+        m_noclipLabel->setPosition({leftX, rowTop - 32.f});
         m_mainLayer->addChild(m_noclipLabel);
+        makeButton("TOGGLE", {leftX, rowTop - 67.f},
+            menu_selector(GDControlPopup::onToggleNoclip), 0.62f);
 
-        makeButton("TOGGLE", {size.width / 2.f, 140.f},
-            menu_selector(GDControlPopup::onToggleNoclip), 0.55f);
-
-        auto speedTitle = CCLabelBMFont::create("SPEEDHACK", "bigFont.fnt");
-        speedTitle->setScale(0.55f);
-        speedTitle->setPosition({size.width / 2.f, 105.f});
-        m_mainLayer->addChild(speedTitle);
-
-        makeButton("-", {size.width / 2.f - 75.f, 72.f},
-            menu_selector(GDControlPopup::onSpeedDown), 0.55f);
-
+        addSectionTitle("SPEEDHACK", {rightX, rowTop});
+        makeButton("-", {rightX - 72.f, rowTop - 40.f},
+            menu_selector(GDControlPopup::onSpeedDown), 0.62f);
         m_speedLabel = CCLabelBMFont::create("", "goldFont.fnt");
-        m_speedLabel->setScale(0.7f);
-        m_speedLabel->setPosition({size.width / 2.f, 72.f});
+        m_speedLabel->setScale(0.75f);
+        m_speedLabel->setPosition({rightX, rowTop - 40.f});
         m_mainLayer->addChild(m_speedLabel);
+        makeButton("+", {rightX + 72.f, rowTop - 40.f},
+            menu_selector(GDControlPopup::onSpeedUp), 0.62f);
 
-        makeButton("+", {size.width / 2.f + 75.f, 72.f},
-            menu_selector(GDControlPopup::onSpeedUp), 0.55f);
-
-
-        auto iconsTitle = CCLabelBMFont::create("UNLOCK ICONS", "bigFont.fnt");
-        iconsTitle->setScale(0.5f);
-        iconsTitle->setPosition({size.width / 2.f, 35.f});
-        m_mainLayer->addChild(iconsTitle);
-
+        addSectionTitle("UNLOCK ICONS", {leftX, rowBottom});
         m_iconsLabel = CCLabelBMFont::create("", "goldFont.fnt");
-        m_iconsLabel->setScale(0.6f);
-        m_iconsLabel->setPosition({size.width / 2.f, 14.f});
+        m_iconsLabel->setScale(0.68f);
+        m_iconsLabel->setPosition({leftX, rowBottom - 30.f});
         m_mainLayer->addChild(m_iconsLabel);
+        makeButton("TOGGLE", {leftX, rowBottom - 65.f},
+            menu_selector(GDControlPopup::onToggleIcons), 0.62f);
 
-        makeButton("TOGGLE", {size.width / 2.f, -15.f},
-            menu_selector(GDControlPopup::onToggleIcons), 0.5f);
+        addSectionTitle("PRACTICE MUSIC", {rightX, rowBottom});
+        m_practiceMusicLabel = CCLabelBMFont::create("", "goldFont.fnt");
+        m_practiceMusicLabel->setScale(0.68f);
+        m_practiceMusicLabel->setPosition({rightX, rowBottom - 30.f});
+        m_mainLayer->addChild(m_practiceMusicLabel);
+        makeButton("UNLOCK", {rightX, rowBottom - 65.f},
+            menu_selector(GDControlPopup::onTogglePracticeMusic), 0.62f);
+
+        auto hint = CCLabelBMFont::create("LOCAL MOD SETTINGS", "goldFont.fnt");
+        hint->setOpacity(170);
+        hint->setScale(0.42f);
+        hint->setPosition({centerX, 17.f});
+        m_mainLayer->addChild(hint);
 
         this->refreshValues();
         return true;
     }
 
     void refreshValues() {
-        if (m_noclipLabel) {
-            m_noclipLabel->setString(isNoclipEnabled() ? "ENABLED" : "DISABLED");
-        }
-        if (m_speedLabel) {
-            m_speedLabel->setString(fmt::format("{:.2f}x", getSpeedMultiplier()).c_str());
-        }
-        if (m_iconsLabel) {
-            m_iconsLabel->setString(isUnlockIconsEnabled() ? "ENABLED" : "DISABLED");
-        }
+        if (m_noclipLabel) m_noclipLabel->setString(isNoclipEnabled() ? "ENABLED" : "DISABLED");
+        if (m_speedLabel) m_speedLabel->setString(fmt::format("{:.2f}x", getSpeedMultiplier()).c_str());
+        if (m_iconsLabel) m_iconsLabel->setString(isUnlockIconsEnabled() ? "ENABLED" : "DISABLED");
+        if (m_practiceMusicLabel) m_practiceMusicLabel->setString(isPracticeMusicEnabled() ? "UNLOCKED" : "LOCKED");
     }
 
     void onToggleNoclip(CCObject*) {
@@ -124,6 +140,11 @@ protected:
 
     void onToggleIcons(CCObject*) {
         Mod::get()->setSettingValue<bool>("unlock-icons", !isUnlockIconsEnabled());
+        this->refreshValues();
+    }
+
+    void onTogglePracticeMusic(CCObject*) {
+        Mod::get()->setSettingValue<bool>("unlock-practice-music", !isPracticeMusicEnabled());
         this->refreshValues();
     }
 
@@ -337,6 +358,15 @@ class $modify(GDControlScheduler, cocos2d::CCScheduler) {
     }
 };
 
+class $modify(GDControlStatsManager, GameStatsManager) {
+    bool isItemUnlocked(UnlockType type, int itemID) {
+        if (isPracticeMusicEnabled() && type == UnlockType::GJItem && itemID == 17) {
+            return true;
+        }
+        return GameStatsManager::isItemUnlocked(type, itemID);
+    }
+};
+
 class $modify(GDControlGameManager, GameManager) {
     bool isIconUnlocked(int iconID, IconType type) {
         if (isUnlockIconsEnabled()) {
@@ -347,5 +377,5 @@ class $modify(GDControlGameManager, GameManager) {
 };
 
 $on_mod(Loaded) {
-    log::info("GD Control v0.1.7 loaded for Geometry Dash 2.2091.");
+    log::info("GD Control v0.1.8 loaded for Geometry Dash 2.2091.");
 }
