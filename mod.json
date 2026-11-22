@@ -5,9 +5,9 @@
   },
   "id": "fakeskyline.gdcontrol",
   "name": "GD Control",
-  "version": "v0.1.5",
+  "version": "v0.1.6",
   "developer": "fakeskyline",
-  "description": "A Geometry Dash mod menu with No-Clip and Speedhack for Geometry Dash 2.2091.",
+  "description": "A Geometry Dash mod menu with a draggable floating button, No-Clip and Speedhack.",
   "repository": "https://github.com/fakeskyline/GD-Control",
   "tags": [
     "gameplay",
