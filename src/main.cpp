@@ -144,6 +144,7 @@ protected:
     CCLabelTTF* m_fpsStatus = nullptr;
     CCLabelTTF* m_fpsValue = nullptr;
     CCLabelTTF* m_fpsAction = nullptr;
+    CCLabelTTF* m_instantCompleteTitle = nullptr;
 
     float m_cardTitleMaxWidth = 0.f;
     CCNode* m_pages[3] = { nullptr, nullptr, nullptr };
@@ -522,6 +523,12 @@ protected:
         addValueControls(releaseRow, m_autoRelease, fmt::format("{}", getAutoClickerRelease()).c_str(),
             [this]() { onAutoReleaseDown(nullptr); }, [this]() { onAutoReleaseUp(nullptr); }, 260.f);
 
+        auto instantRow = addPlainRow(m_pages[0], 5,
+            tr("Instant Complete", "Мгновенное прохождение"), m_instantCompleteTitle);
+        addActionButton(instantRow, tr("Complete", "Пройти"),
+            {contentW - 62.f, 14.f}, 104.f, 22.f,
+            [this]() { onInstantComplete(nullptr); });
+
         // UNLOCKS
         addComponentRow(m_pages[1], 0, tr("Unlock Icons", "Разблокировка иконок"),
             m_iconsTitle, m_iconsCheck, isUnlockIconsEnabled(),
@@ -569,6 +576,8 @@ protected:
         if (m_musicTitle) m_musicTitle->setString(tr("Practice Music", "Музыка в практике"));
         if (m_tpsTitle) m_tpsTitle->setString(tr("TPS Bypass", "Обход TPS"));
         if (m_fpsTitle) m_fpsTitle->setString(tr("FPS Bypass", "Обход FPS"));
+        if (m_instantCompleteTitle) m_instantCompleteTitle->setString(
+            tr("Instant Complete", "Мгновенное прохождение"));
 
         if (m_noclipCheck) m_noclipCheck->setString(isNoclipEnabled() ? "✓" : "");
         if (m_iconsCheck) m_iconsCheck->setString(isUnlockIconsEnabled() ? "✓" : "");
@@ -586,6 +595,19 @@ protected:
         if (m_hintLabel) m_hintLabel->setString(tr(
             "Local settings · changes apply instantly",
             "Локальные настройки · изменения применяются сразу"));
+    }
+
+    void onInstantComplete(CCObject*) {
+        auto layer = PlayLayer::get();
+        if (!layer || layer->m_playerDied ||
+            layer->m_levelEndAnimationStarted || layer->m_hasCompletedLevel) {
+            Notification::create(
+                tr("Start a level first", "Сначала запусти уровень"),
+                NotificationIcon::Info, 2.f
+            )->show();
+            return;
+        }
+        layer->levelComplete();
     }
 
     void onToggleLanguage(CCObject*) {
@@ -984,7 +1006,7 @@ class $modify(GDControlGameManager, GameManager) {
 };
 
 $on_mod(Loaded) {
-    log::info("GD Control v0.2.1 loaded for Geometry Dash 2.2091.");
+    log::info("GD Control v0.2.3 loaded for Geometry Dash 2.2091.");
     installFloatingButton();
     if (isFPSBypassEnabled()) applyFPSBypass();
 }

@@ -4,6 +4,8 @@ A Geometry Dash mod for **GD 2.2091**, Geode **6.0.0-beta.1**, Android64.
 
 ## Features
 
+- **Instant Complete** — immediately completes the currently active level using the game's native completion routine.
+
 - Floating **GDC** button opens the full GD CONTROL panel.
 - Dark graphite panel with compact black feature cards and RU/EN language switching.
 - No-Clip.
