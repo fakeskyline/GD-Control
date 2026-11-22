@@ -49,23 +49,19 @@ protected:
 
     bool init() {
         auto win = CCDirector::sharedDirector()->getWinSize();
-        auto panelWidth = std::max(300.f, win.width - 24.f);
-        auto panelHeight = std::max(220.f, win.height - 24.f);
+        auto panelWidth = std::max(1.f, win.width * 0.94f);
+        auto panelHeight = std::max(1.f, win.height * 0.94f);
         if (!Popup::init(panelWidth, panelHeight, "GJ_square01.png")) {
             return false;
         }
 
         this->setTitle("GD CONTROL", "goldFont.fnt", 0.85f);
         auto size = m_mainLayer->getContentSize();
+        const float width = size.width;
+        const float height = size.height;
+        const bool twoColumns = width >= height * 1.25f;
 
-        // Keep the controls grouped in the upper-left area instead of spreading
-        // them across the entire popup. Coordinates are clamped to the layer.
-        auto left = std::max(72.f, size.width * 0.08f);
-        auto second = std::min(left + 340.f, size.width - 180.f);
-        auto top = size.height - 105.f;
-        auto row2 = top - 205.f;
-
-        auto makeButton = [this](const char* text, CCPoint pos, SEL_MenuHandler callback, float scale = 0.65f) {
+        auto makeButton = [this](const char* text, CCPoint pos, SEL_MenuHandler callback, float scale = 0.58f) {
             auto sprite = ButtonSprite::create(text, "goldFont.fnt", "GJ_button_01.png", scale);
             auto item = CCMenuItemSpriteExtra::create(sprite, this, callback);
             item->setPosition(pos);
@@ -73,65 +69,84 @@ protected:
             return item;
         };
 
-        auto addSectionTitle = [this](const char* text, CCPoint pos) {
-            auto label = CCLabelBMFont::create(text, "bigFont.fnt");
-            label->setScale(0.55f);
-            label->setAnchorPoint({0.f, 0.5f});
+        auto makeLabel = [this](const char* text, CCPoint pos, float baseScale, float maxWidth, bool gold = false) {
+            auto label = CCLabelBMFont::create(text, gold ? "goldFont.fnt" : "bigFont.fnt");
+            label->setAnchorPoint({0.5f, 0.5f});
+            float fit = label->getContentSize().width > 0.f
+                ? std::min(baseScale, maxWidth / label->getContentSize().width)
+                : baseScale;
+            label->setScale(std::max(0.28f, fit));
             label->setPosition(pos);
             m_mainLayer->addChild(label);
             return label;
         };
 
-        // Top row: No-Clip and Speedhack.
-        addSectionTitle("NO-CLIP", {left, top});
-        m_noclipLabel = CCLabelBMFont::create("", "goldFont.fnt");
-        m_noclipLabel->setScale(0.66f);
-        m_noclipLabel->setAnchorPoint({0.f, 0.5f});
-        m_noclipLabel->setPosition({left, top - 38.f});
-        m_mainLayer->addChild(m_noclipLabel);
-        makeButton("TOGGLE", {left + 65.f, top - 88.f},
-            menu_selector(GDControlPopup::onToggleNoclip), 0.58f);
+        const float cellWidth = twoColumns ? width * 0.42f : width * 0.88f;
+        const float leftX = twoColumns ? width * 0.27f : width * 0.5f;
+        const float rightX = width * 0.73f;
+        const float titleOffset = twoColumns ? height * 0.105f : height * 0.052f;
+        const float actionOffset = twoColumns ? height * 0.105f : height * 0.052f;
 
-        addSectionTitle("SPEEDHACK", {second, top});
-        makeButton("-", {second + 22.f, top - 67.f},
-            menu_selector(GDControlPopup::onSpeedDown), 0.58f);
-        m_speedLabel = CCLabelBMFont::create("", "goldFont.fnt");
-        m_speedLabel->setScale(0.68f);
-        m_speedLabel->setPosition({second + 112.f, top - 67.f});
-        m_mainLayer->addChild(m_speedLabel);
-        makeButton("+", {second + 202.f, top - 67.f},
-            menu_selector(GDControlPopup::onSpeedUp), 0.58f);
+        auto addToggleSection = [&](const char* title, CCLabelBMFont*& valueLabel,
+                                    float x, float y, SEL_MenuHandler callback,
+                                    const char* initialValue) {
+            makeLabel(title, {x, y + titleOffset}, 0.56f, cellWidth * 0.94f);
+            valueLabel = makeLabel(initialValue, {x, y}, 0.66f, cellWidth * 0.90f, true);
+            makeButton("TOGGLE", {x, y - actionOffset}, callback, 0.56f);
+        };
 
-        // Second row: unlock features, directly below the first row.
-        addSectionTitle("UNLOCK ICONS", {left, row2});
-        m_iconsLabel = CCLabelBMFont::create("", "goldFont.fnt");
-        m_iconsLabel->setScale(0.64f);
-        m_iconsLabel->setAnchorPoint({0.f, 0.5f});
-        m_iconsLabel->setPosition({left, row2 - 38.f});
-        m_mainLayer->addChild(m_iconsLabel);
-        makeButton("TOGGLE", {left + 65.f, row2 - 88.f},
-            menu_selector(GDControlPopup::onToggleIcons), 0.58f);
+        auto addSpeedSection = [&](float x, float y) {
+            makeLabel("SPEEDHACK", {x, y + titleOffset}, 0.56f, cellWidth * 0.94f);
+            const float buttonOffset = cellWidth * (twoColumns ? 0.30f : 0.25f);
+            makeButton("-", {x - buttonOffset, y - actionOffset * 0.15f},
+                menu_selector(GDControlPopup::onSpeedDown), 0.54f);
+            m_speedLabel = makeLabel("", {x, y - actionOffset * 0.15f},
+                0.66f, cellWidth * 0.34f, true);
+            makeButton("+", {x + buttonOffset, y - actionOffset * 0.15f},
+                menu_selector(GDControlPopup::onSpeedUp), 0.54f);
+        };
 
-        addSectionTitle("PRACTICE MUSIC", {second, row2});
-        m_practiceMusicLabel = CCLabelBMFont::create("", "goldFont.fnt");
-        m_practiceMusicLabel->setScale(0.64f);
-        m_practiceMusicLabel->setAnchorPoint({0.f, 0.5f});
-        m_practiceMusicLabel->setPosition({second, row2 - 38.f});
-        m_mainLayer->addChild(m_practiceMusicLabel);
-        makeButton("UNLOCK", {second + 75.f, row2 - 88.f},
-            menu_selector(GDControlPopup::onTogglePracticeMusic), 0.58f);
+        if (twoColumns) {
+            const float topY = height * 0.64f;
+            const float bottomY = height * 0.27f;
+
+            addToggleSection("NO-CLIP", m_noclipLabel, leftX, topY,
+                menu_selector(GDControlPopup::onToggleNoclip),
+                isNoclipEnabled() ? "ENABLED" : "DISABLED");
+            addSpeedSection(rightX, topY);
+
+            addToggleSection("UNLOCK ICONS", m_iconsLabel, leftX, bottomY,
+                menu_selector(GDControlPopup::onToggleIcons),
+                isUnlockIconsEnabled() ? "ENABLED" : "DISABLED");
+            addToggleSection("PRACTICE MUSIC", m_practiceMusicLabel, rightX, bottomY,
+                menu_selector(GDControlPopup::onTogglePracticeMusic),
+                isPracticeMusicEnabled() ? "UNLOCKED" : "LOCKED");
+        } else {
+            const float rowStep = height * 0.195f;
+            const float firstY = height * 0.79f;
+
+            addToggleSection("NO-CLIP", m_noclipLabel, leftX, firstY,
+                menu_selector(GDControlPopup::onToggleNoclip),
+                isNoclipEnabled() ? "ENABLED" : "DISABLED");
+            addSpeedSection(leftX, firstY - rowStep);
+            addToggleSection("UNLOCK ICONS", m_iconsLabel, leftX, firstY - rowStep * 2.f,
+                menu_selector(GDControlPopup::onToggleIcons),
+                isUnlockIconsEnabled() ? "ENABLED" : "DISABLED");
+            addToggleSection("PRACTICE MUSIC", m_practiceMusicLabel, leftX, firstY - rowStep * 3.f,
+                menu_selector(GDControlPopup::onTogglePracticeMusic),
+                isPracticeMusicEnabled() ? "UNLOCKED" : "LOCKED");
+        }
 
         auto hint = CCLabelBMFont::create("LOCAL MOD SETTINGS", "goldFont.fnt");
         hint->setOpacity(150);
-        hint->setScale(0.38f);
-        hint->setAnchorPoint({0.f, 0.5f});
-        hint->setPosition({left, 22.f});
+        hint->setScale(std::min(0.38f, width * 0.25f / hint->getContentSize().width));
+        hint->setAnchorPoint({0.5f, 0.5f});
+        hint->setPosition({width * 0.5f, height * 0.035f});
         m_mainLayer->addChild(hint);
 
         this->refreshValues();
         return true;
     }
-
     void refreshValues() {
         if (m_noclipLabel) m_noclipLabel->setString(isNoclipEnabled() ? "ENABLED" : "DISABLED");
         if (m_speedLabel) m_speedLabel->setString(fmt::format("{:.2f}x", getSpeedMultiplier()).c_str());
